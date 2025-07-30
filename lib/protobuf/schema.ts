@@ -152,7 +152,6 @@ export const WLOC_API_ENDPOINTS = {
 
 // Serialize protobuf message with initial bytes prefix
 export function serializeRequest(wlocData: IAppleWLoc): Buffer {
-  console.log('serializeRequest input:', JSON.stringify(wlocData, null, 2));
   
   // Build the protobuf data structure properly
   // IMPORTANT: protobufjs expects camelCase field names, not snake_case
@@ -179,23 +178,17 @@ export function serializeRequest(wlocData: IAppleWLoc): Buffer {
     };
   }
   
-  console.log('Proto data to encode:', JSON.stringify(protoData, null, 2));
-  
   // Create and verify the message
   const errMsg = AppleWLoc.verify(protoData);
   if (errMsg) {
-    console.error('Protobuf verification error:', errMsg);
     throw new Error(`Invalid protobuf data: ${errMsg}`);
   }
   
   // Create the message
   const message = AppleWLoc.create(protoData);
-  console.log('Created message:', AppleWLoc.toObject(message));
   
   // Encode the message
   const encodedMessage = AppleWLoc.encode(message).finish();
-  console.log('Encoded message length:', encodedMessage.length);
-  console.log('Encoded message hex:', Buffer.from(encodedMessage).toString('hex'));
   
   // Create length byte (single byte, not uint16)
   const lengthByte = Buffer.from([encodedMessage.length]);
@@ -207,16 +200,11 @@ export function serializeRequest(wlocData: IAppleWLoc): Buffer {
     Buffer.from(encodedMessage)
   ]);
   
-  console.log('Full request length:', fullRequest.length);
-  console.log('Full request hex:', fullRequest.toString('hex'));
-  
   return fullRequest;
 }
 
 // Parse response (skip first 10 bytes)
 export function parseResponse(data: Buffer): IAppleWLoc {
-  console.log('parseResponse input length:', data.length);
-  console.log('First 20 bytes hex:', data.slice(0, 20).toString('hex'));
   
   if (data.length < 10) {
     throw new Error(`Response too short: ${data.length} bytes`);
@@ -224,8 +212,6 @@ export function parseResponse(data: Buffer): IAppleWLoc {
   
   // Skip first 10 bytes and decode
   const protobufData = data.slice(10);
-  console.log('Protobuf data length:', protobufData.length);
-  console.log('Protobuf data hex:', protobufData.toString('hex'));
   
   try {
     const message = AppleWLoc.decode(protobufData);
@@ -235,8 +221,6 @@ export function parseResponse(data: Buffer): IAppleWLoc {
       arrays: true,   // Always create arrays
       objects: true   // Always create objects
     }) as any;
-    
-    console.log('Decoded object:', JSON.stringify(obj, null, 2));
     
     // protobufjs returns camelCase field names
     // Add snake_case versions for compatibility if needed
@@ -252,7 +236,6 @@ export function parseResponse(data: Buffer): IAppleWLoc {
     
     return obj as IAppleWLoc;
   } catch (error) {
-    console.error('Failed to decode protobuf:', error);
     throw new Error(`Failed to decode protobuf: ${error}`);
   }
 }

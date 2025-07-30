@@ -123,22 +123,25 @@ export default function MapView({
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="map-container relative w-full h-full" style={{ width: '100%', height: '100%' }}>
       <DeckGL
         ref={deckRef}
         viewState={viewState}
         onViewStateChange={({ viewState }) => setViewState(viewState)}
         controller={true}
         layers={layers}
+        style={{ width: '100%', height: '100%' }}
       >
         {mapboxToken ? (
           <MapGL
             mapStyle="mapbox://styles/mapbox/light-v11"
             mapboxAccessToken={mapboxToken}
+            style={{ width: '100%', height: '100%' }}
           />
         ) : (
           <MapGL
             mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+            style={{ width: '100%', height: '100%' }}
           />
         )}
       </DeckGL>

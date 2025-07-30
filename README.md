@@ -19,17 +19,12 @@ A web application that allows users to search for Wi-Fi access point locations u
 
 ### Installation
 
-1. Clone the repository:
-```bash
-cd /Users/christian/dev/map-search
-```
-
-2. Install dependencies:
+1. Install dependencies:
 ```bash
 npm install
 ```
 
-3. (Optional) Add a Mapbox token for enhanced map tiles:
+1. (Optional) Add a Mapbox token for enhanced map tiles:
    - Get a token from [Mapbox](https://www.mapbox.com/)
    - Add it to `.env.local`:
    ```
