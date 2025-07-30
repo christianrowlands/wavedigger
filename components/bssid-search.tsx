@@ -125,18 +125,30 @@ export default function BSSIDSearch({
           onKeyPress={handleKeyPress}
           disabled={isLoading}
           className={error ? 'border-red-500' : ''}
+          variant="modern"
         />
-        <Button 
+        <button 
           onClick={handleSearch} 
           disabled={isLoading || !input.trim()}
+          className={`btn-primary flex items-center justify-center gap-2 min-w-[120px] ${isLoading || !input.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+          style={{
+            background: isLoading || !input.trim() ? 'var(--bg-tertiary)' : undefined,
+            color: isLoading || !input.trim() ? 'var(--text-tertiary)' : undefined,
+            boxShadow: isLoading || !input.trim() ? 'none' : undefined
+          }}
         >
           {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Searching</span>
+            </>
           ) : (
-            <Search className="h-4 w-4" />
+            <>
+              <Search className="h-4 w-4" />
+              <span>Search</span>
+            </>
           )}
-          <span className="ml-2">Search</span>
-        </Button>
+        </button>
       </div>
       
       {error && (
@@ -154,8 +166,21 @@ export default function BSSIDSearch({
               <button
                 key={bssid}
                 onClick={() => handleRecentSearch(bssid)}
-                className="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                className="text-xs px-3 py-1 rounded-full transition-all hover:scale-105 glass-subtle"
+                style={{
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-primary)',
+                  color: 'var(--text-secondary)'
+                }}
                 disabled={isLoading}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-hover)';
+                  e.currentTarget.style.borderColor = 'var(--color-primary-300)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--bg-tertiary)';
+                  e.currentTarget.style.borderColor = 'var(--border-primary)';
+                }}
               >
                 {bssid}
               </button>

@@ -184,6 +184,7 @@ export default function MultiBSSIDSearch({
               onKeyPress={handleKeyPress}
               onPaste={index === 0 ? handlePaste : undefined}
               disabled={isLoading}
+              variant="modern"
               style={{
                 borderColor: input.value && !input.isValid ? 'var(--color-error)' : undefined
               }}
@@ -215,23 +216,28 @@ export default function MultiBSSIDSearch({
           </Button>
         )}
         
-        <Button 
+        <button 
           onClick={handleSearch} 
           disabled={isLoading || inputs.every(i => !i.value)}
-          className="flex-1"
+          className={`flex-1 btn-primary flex items-center justify-center gap-2 ${isLoading || inputs.every(i => !i.value) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          style={{
+            background: isLoading || inputs.every(i => !i.value) ? 'var(--bg-tertiary)' : undefined,
+            color: isLoading || inputs.every(i => !i.value) ? 'var(--text-tertiary)' : undefined,
+            boxShadow: isLoading || inputs.every(i => !i.value) ? 'none' : undefined
+          }}
         >
           {isLoading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Searching... {searchProgress > 0 && `${Math.round(searchProgress)}%`}
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Searching... {searchProgress > 0 && `${Math.round(searchProgress)}%`}</span>
             </>
           ) : (
             <>
-              <Search className="h-4 w-4 mr-2" />
-              Search {inputs.filter(i => i.value && i.isValid).length} BSSID(s)
+              <Search className="h-4 w-4" />
+              <span>Search {inputs.filter(i => i.value && i.isValid).length} BSSID(s)</span>
             </>
           )}
-        </Button>
+        </button>
       </div>
       
       {isLoading && searchProgress > 0 && (

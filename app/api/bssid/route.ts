@@ -105,8 +105,7 @@ async function queryAppleWLOC(bssid: string, useChina: boolean = false): Promise
       bssid: wifiDevice.bssid,
       location: {
         latitude: location.lat,
-        longitude: location.lng,
-        altitude: location.alt
+        longitude: location.lng
       },
       accuracy: wifiDevice.location.horizontalAccuracy
     };

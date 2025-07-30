@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import BSSIDSearch from '@/components/bssid-search';
 import MultiBSSIDSearch from '@/components/bssid-search-multi';
+import ThemeToggle from '@/components/theme-toggle';
 import type { BSSIDSearchResult, MapMarker, SearchError } from '@/types';
 import { Info, ToggleLeft, ToggleRight } from 'lucide-react';
 
@@ -83,19 +84,22 @@ export default function Home() {
                 BSSID Location Search
               </h1>
             </div>
-            <button
-              onClick={handleClearAll}
-              className="px-4 py-2 text-sm font-medium rounded-lg transition-all hover:scale-105"
-              style={{
-                color: markers.length === 0 ? 'var(--text-tertiary)' : 'var(--color-error)',
-                background: markers.length === 0 ? 'transparent' : 'var(--color-error-light)',
-                cursor: markers.length === 0 ? 'not-allowed' : 'pointer',
-                opacity: markers.length === 0 ? 0.5 : 1
-              }}
-              disabled={markers.length === 0}
-            >
-              Clear All
-            </button>
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <button
+                onClick={handleClearAll}
+                className="px-4 py-2 text-sm font-medium rounded-lg transition-all hover:scale-105"
+                style={{
+                  color: markers.length === 0 ? 'var(--text-tertiary)' : 'var(--color-error)',
+                  background: markers.length === 0 ? 'transparent' : 'var(--color-error-light)',
+                  cursor: markers.length === 0 ? 'not-allowed' : 'pointer',
+                  opacity: markers.length === 0 ? 0.5 : 1
+                }}
+                disabled={markers.length === 0}
+              >
+                Clear All
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -142,9 +146,10 @@ export default function Home() {
             </div>
 
             {/* Service Description */}
-            <div className="rounded-xl p-4 transition-all animate-slideIn" style={{ 
-              background: 'var(--color-info-light)',
-              border: '1px solid var(--color-info)'
+            <div className="rounded-xl p-4 transition-all animate-slideIn glass-card" style={{ 
+              background: 'linear-gradient(135deg, var(--color-info-light) 0%, rgba(56, 189, 248, 0.1) 100%)',
+              border: '1px solid var(--color-info)',
+              boxShadow: '0 4px 15px 0 rgba(56, 189, 248, 0.2)'
             }}>
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{
@@ -158,11 +163,11 @@ export default function Home() {
                     What is this service?
                   </p>
                   <p className="mb-2 leading-relaxed">
-                    This tool queries Apple's location database to find the approximate location 
+                    This tool queries Apple&apos;s location database to find the approximate location 
                     of Wi-Fi access points based on their BSSID (MAC address).
                   </p>
                   <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                    Note: This queries Apple's real location database. Not all BSSIDs 
+                    Note: This queries Apple&apos;s real location database. Not all BSSIDs 
                     are registered - new or private access points may not be found.
                   </p>
                 </div>
@@ -175,10 +180,7 @@ export default function Home() {
                 <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                   Selected Location
                 </h3>
-                <div className="rounded-lg p-4 space-y-2 transition-all" style={{ 
-                  background: 'var(--bg-tertiary)',
-                  border: '1px solid var(--border-primary)'
-                }}>
+                <div className="rounded-lg p-4 space-y-2 transition-all glass-card">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
                     <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
@@ -197,14 +199,6 @@ export default function Home() {
                       {selectedMarker.location.longitude.toFixed(6)}
                     </span>
                   </div>
-                  {selectedMarker.location.altitude && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Altitude</span>
-                      <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
-                        {selectedMarker.location.altitude.toFixed(1)}m
-                      </span>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -219,23 +213,13 @@ export default function Home() {
                   {searchHistory.map((result, index) => (
                     <div
                       key={`${result.bssid}-${index}`}
-                      className="rounded-lg p-3 cursor-pointer transition-all hover:scale-[1.02] animate-fadeIn"
+                      className="rounded-lg p-3 cursor-pointer card-hover glass-card animate-fadeIn"
                       style={{ 
-                        background: 'var(--bg-tertiary)',
-                        border: '1px solid var(--border-primary)',
                         animationDelay: `${index * 50}ms`
                       }}
                       onClick={() => {
                         const marker = markers.find(m => m.bssid === result.bssid);
                         if (marker) setSelectedMarker(marker);
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--bg-hover)';
-                        e.currentTarget.style.borderColor = 'var(--color-primary-300)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'var(--bg-tertiary)';
-                        e.currentTarget.style.borderColor = 'var(--border-primary)';
                       }}
                     >
                       <p className="font-medium font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
