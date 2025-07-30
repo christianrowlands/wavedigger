@@ -35,8 +35,8 @@ export function iconToDataUrl(
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgString)}`;
 }
 
-// Create a location marker with embedded WiFi icon
-export function createLocationWifiIcon(
+// Create a simple location pin marker
+export function createLocationPin(
   primaryColor: string,
   size: number = 48
 ): string {
@@ -57,28 +57,8 @@ export function createLocationWifiIcon(
             fill="url(#pin-gradient)" 
             filter="url(#shadow)"/>
       
-      <!-- WiFi icon inside pin -->
-      <g transform="translate(24, 18)">
-        <!-- WiFi waves -->
-        <path d="M-12 -4 Q-6 -10 0 -10 Q6 -10 12 -4" 
-              fill="none" 
-              stroke="white" 
-              stroke-width="2" 
-              stroke-linecap="round" 
-              opacity="0.4"/>
-        <path d="M-8 0 Q-4 -6 0 -6 Q4 -6 8 0" 
-              fill="none" 
-              stroke="white" 
-              stroke-width="2" 
-              stroke-linecap="round" 
-              opacity="0.7"/>
-        <path d="M-4 4 Q-2 2 0 2 Q2 2 4 4" 
-              fill="none" 
-              stroke="white" 
-              stroke-width="2.5" 
-              stroke-linecap="round"/>
-        <circle cx="0" cy="6" r="2" fill="white"/>
-      </g>
+      <!-- Simple center circle -->
+      <circle cx="24" cy="18" r="6" fill="white" opacity="0.9"/>
     </svg>
   `;
   
@@ -139,7 +119,7 @@ export function createRouterIcon(
 
 // Get icon based on preference and theme
 export function getMapIcon(
-  type: 'location-wifi' | 'router' | 'wifi' | 'broadcast',
+  type: 'location-pin' | 'router' | 'wifi' | 'broadcast',
   primaryColor: string,
   hoverColor?: string,
   isHovered: boolean = false
@@ -147,8 +127,8 @@ export function getMapIcon(
   const color = isHovered && hoverColor ? hoverColor : primaryColor;
   
   switch (type) {
-    case 'location-wifi':
-      return createLocationWifiIcon(color);
+    case 'location-pin':
+      return createLocationPin(color);
     case 'router':
       return createRouterIcon(color);
     case 'wifi':
@@ -156,6 +136,6 @@ export function getMapIcon(
     case 'broadcast':
       return iconToDataUrl(FaBroadcastTower, color);
     default:
-      return createLocationWifiIcon(color);
+      return createLocationPin(color);
   }
 }

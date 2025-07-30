@@ -103,8 +103,8 @@ export default function MapView({
   }, [onMarkerClick]);
 
   // Create icons with current theme colors
-  const wifiIcon = getMapIcon('location-wifi', iconColors.gradientStart, iconColors.hoverGradientStart, false);
-  const wifiIconHover = getMapIcon('location-wifi', iconColors.gradientStart, iconColors.hoverGradientStart, true);
+  const wifiIcon = getMapIcon('location-pin', iconColors.gradientStart, iconColors.hoverGradientStart, false);
+  const wifiIconHover = getMapIcon('location-pin', iconColors.gradientStart, iconColors.hoverGradientStart, true);
 
   const layers = [
     new IconLayer({
