@@ -90,27 +90,34 @@ export default function MapView({
 
     return (
       <div 
-        className="absolute z-10 pointer-events-none bg-white px-3 py-2 rounded-lg shadow-lg"
+        className="absolute z-10 pointer-events-none glass px-4 py-3 animate-fadeIn"
         style={{
           left: '50%',
           top: '50%',
-          transform: 'translate(-50%, -120%)'
+          transform: 'translate(-50%, -120%)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-xl)'
         }}
       >
-        <div className="text-sm font-semibold text-gray-900">
+        <div className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
           {hoveredMarker.bssid}
         </div>
-        <div className="text-xs text-gray-600">
-          Lat: {hoveredMarker.location.latitude.toFixed(6)}
-        </div>
-        <div className="text-xs text-gray-600">
-          Lng: {hoveredMarker.location.longitude.toFixed(6)}
-        </div>
-        {hoveredMarker.location.altitude && (
-          <div className="text-xs text-gray-600">
-            Alt: {hoveredMarker.location.altitude.toFixed(1)}m
+        <div className="space-y-0.5">
+          <div className="text-xs flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+            <span style={{ color: 'var(--text-tertiary)' }}>Lat:</span>
+            <span className="font-mono">{hoveredMarker.location.latitude.toFixed(6)}</span>
           </div>
-        )}
+          <div className="text-xs flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+            <span style={{ color: 'var(--text-tertiary)' }}>Lng:</span>
+            <span className="font-mono">{hoveredMarker.location.longitude.toFixed(6)}</span>
+          </div>
+          {hoveredMarker.location.altitude && (
+            <div className="text-xs flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+              <span style={{ color: 'var(--text-tertiary)' }}>Alt:</span>
+              <span className="font-mono">{hoveredMarker.location.altitude.toFixed(1)}m</span>
+            </div>
+          )}
+        </div>
       </div>
     );
   };

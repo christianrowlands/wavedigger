@@ -10,21 +10,37 @@ const Alert = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement> & {
     variant?: 'default' | 'destructive'
   }
->(({ className, variant = 'default', ...props }, ref) => (
-  <div
-    ref={ref}
-    role="alert"
-    className={cn(
-      "relative w-full rounded-lg border p-4",
-      {
-        'default': "bg-background text-foreground",
-        'destructive': "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
-      }[variant],
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, variant = 'default', style, ...props }, ref) => {
+  const variantStyles = {
+    default: {
+      background: 'var(--bg-tertiary)',
+      color: 'var(--text-primary)',
+      border: '1px solid var(--border-primary)'
+    },
+    destructive: {
+      background: 'var(--color-error-light)',
+      color: 'var(--color-error-dark)',
+      border: '1px solid var(--color-error)'
+    }
+  }
+  
+  return (
+    <div
+      ref={ref}
+      role="alert"
+      className={cn(
+        "relative w-full p-4 animate-slideIn",
+        className
+      )}
+      style={{
+        borderRadius: 'var(--radius-lg)',
+        ...variantStyles[variant],
+        ...(style || {})
+      }}
+      {...props}
+    />
+  )
+})
 Alert.displayName = "Alert"
 
 const AlertDescription = React.forwardRef<

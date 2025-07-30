@@ -17,6 +17,29 @@ export function normalizeBSSID(bssid: string): string | null {
   return parts.join(':');
 }
 
+// Normalize BSSID for comparison (handles non-padded format like "11:5:33:44:3d:62")
+export function normalizeBSSIDForComparison(bssid: string): string {
+  // Split by colon or dash separator
+  const parts = bssid.trim().split(/[:\-]/);
+  
+  if (parts.length === 6) {
+    // Pad each part to 2 characters and join with colons
+    return parts.map(part => part.padStart(2, '0')).join(':').toUpperCase();
+  } else if (bssid.length === 12 && /^[0-9a-fA-F]{12}$/i.test(bssid)) {
+    // No separators, split into pairs
+    return bssid.toUpperCase().match(/.{2}/g)!.join(':');
+  }
+  
+  // Try to extract hex characters and format
+  const hexOnly = bssid.replace(/[^0-9A-Fa-f]/g, '');
+  if (hexOnly.length === 12) {
+    return hexOnly.toUpperCase().match(/.{2}/g)!.join(':');
+  }
+  
+  // Fallback to original
+  return bssid.toUpperCase();
+}
+
 export function validateBSSID(bssid: string): boolean {
   // Valid BSSID patterns:
   // XX:XX:XX:XX:XX:XX (colons)

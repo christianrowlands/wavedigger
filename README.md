@@ -53,23 +53,23 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 - **Styling**: Tailwind CSS
 - **API**: Next.js API routes
 
-### Mock Data
+### Real Apple WLOC API
 
-Currently, the application uses mock data for demonstration purposes. The API returns sample locations for these BSSIDs:
-- `AA:BB:CC:DD:EE:FF` - San Francisco
-- `00:11:22:33:44:55` - New York
+The application uses Apple's real WLOC API to query BSSID locations. The API implementation:
 
-### Production Implementation
+- Uses protobuf for communication with Apple's servers
+- Sends requests to `https://gs-loc.apple.com/clls/wloc`
+- Handles coordinate conversion (Apple uses int64 with 8 decimal places)
+- Supports both default and China region endpoints
 
-To connect to Apple's actual WLOC API in production, you would need to:
+### Testing with Real BSSIDs
 
-1. Install protobuf libraries (e.g., `protobufjs`)
-2. Implement the Apple WLOC protobuf schema
-3. Update the `/api/bssid` route to:
-   - Serialize requests using protobuf
-   - Send to `https://gs-loc.apple.com/clls/wloc`
-   - Parse the protobuf response
-4. Handle authentication headers and request formatting
+To test the app:
+1. Find a real Wi-Fi BSSID (MAC address) from your router or access point
+2. Enter it in any supported format
+3. The app will query Apple's database and show the location if found
+
+Note: Not all BSSIDs are in Apple's database. Newly deployed or private access points may not have location data.
 
 ## Project Structure
 

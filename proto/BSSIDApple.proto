@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+message WifiDevice {
+  string bssid = 1;
+  Location location = 2;
+}
+
+message AppleWLoc {
+  repeated WifiDevice wifi_devices = 2;
+  sint32 num_cell_results = 3;
+  sint32 num_wifi_results = 4;
+  string app_bundle_id = 5;
+  repeated CellTower cell_tower_response = 22;
+  CellTower cell_tower_request = 25;
+  DeviceType device_type = 33;
+}
+
+message CellTower {
+  uint32 mcc = 1;
+  uint32 mnc = 2;
+  uint32 cell_id = 3;
+  uint32 tac_id = 4;
+  Location location = 5;
+  uint32 uarfcn = 6;
+  uint32 pid = 7;
+}
+
+message DeviceType {
+  string operating_system = 1;
+  string model = 2;
+}
+
+message Location {
+  int64 latitude = 1;
+  int64 longitude = 2;
+  int64 horizontal_accuracy = 3;
+  int64 unknown_value4 = 4;
+  int64 altitude = 5;
+  int64 vertical_accuracy = 6;
+  int64 speed = 7;
+  int64 course = 8;
+  int64 timestamp = 9;
+  int64 unknown_context = 10;
+  int64 motion_activity_type = 11;
+  int64 motion_activity_confidence = 12;
+  int64 provider = 13;
+  int64 floor = 14;
+  int64 unknown15 = 15;
+  int64 motion_vehicle_connected_state_changed = 16;
+  int64 motion_vehicle_connected = 17;
+  int64 raw_motion_activity = 18;
+  int64 motion_activity = 19;
+  int64 dominant_motion_activity = 20;
+  int64 course_accuracy = 21;
+  int64 speed_accuracy = 22;
+  int64 mode_indicator = 23;
+  int64 horzUncSemiMaj = 24;
+  int64 horzUncSemiMin = 25;
+  int64 horzUncSemiMajAz = 26;
+  int64 satellite_report = 27;
+  int64 is_from_location_controller = 28;
+  int64 pipeline_diagnostic_report = 29;
+  int64 baro_calibration_indication = 30;
+  int64 processing_metadata = 31;
+}
