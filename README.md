@@ -1,6 +1,6 @@
-# BSSID Location Search
+# WaveDigger
 
-A web application that allows users to search for Wi-Fi access point locations using their BSSID (MAC address). Built with Next.js, TypeScript, and deck.gl for interactive map visualization.
+Dig into wireless signals to discover their physical locations. WaveDigger helps you find Wi-Fi access points by their BSSID (MAC address), with cell tower tracking coming soon. Built with Next.js, TypeScript, and deck.gl for interactive map visualization.
 
 ## Features
 
@@ -10,6 +10,18 @@ A web application that allows users to search for Wi-Fi access point locations u
 - **Interactive Map**: Visualize results on a deck.gl-powered map
 - **Search History**: Track recent searches for quick access
 - **Responsive Design**: Works on desktop and mobile devices
+
+## Acknowledgments
+
+🙏 **This project would not be possible without the incredible work done by the [apple-corelocation-experiments](https://github.com/acheong08/apple-corelocation-experiments) team.**
+
+WaveDigger is built upon their research and reverse engineering of Apple's location services API. Specifically, we use:
+- Their protobuf definitions for Apple's WLOC API
+- Documentation of the API endpoints and request/response formats
+- Understanding of coordinate encoding and API behavior
+- The initial bytes prefix required for valid requests
+
+Their work in understanding and documenting Apple's undocumented location services has made it possible for projects like WaveDigger to exist. Please check out their repository for the original research and additional tools for working with Apple's location services.
 
 ## Getting Started
 
@@ -50,8 +62,9 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ### Real Apple WLOC API
 
-The application uses Apple's real WLOC API to query BSSID locations. The API implementation:
+The application uses Apple's real WLOC API to query BSSID locations. This implementation is based on the research and protobuf definitions from the [apple-corelocation-experiments](https://github.com/acheong08/apple-corelocation-experiments) project.
 
+The API implementation:
 - Uses protobuf for communication with Apple's servers
 - Sends requests to `https://gs-loc.apple.com/clls/wloc`
 - Handles coordinate conversion (Apple uses int64 with 8 decimal places)
@@ -66,33 +79,22 @@ To test the app:
 
 Note: Not all BSSIDs are in Apple's database. Newly deployed or private access points may not have location data.
 
-## Project Structure
 
-```
-map-search/
-├── app/
-│   ├── api/
-│   │   └── bssid/         # API endpoint for BSSID lookup
-│   ├── globals.css        # Global styles
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Main page component
-├── components/
-│   ├── bssid-search.tsx   # Search input component
-│   ├── map-view.tsx       # deck.gl map component
-│   └── ui/                # Reusable UI components
-├── lib/
-│   └── bssid-utils.ts     # BSSID validation utilities
-└── types/
-    └── index.ts           # TypeScript type definitions
-```
+## Features Roadmap
 
-## Future Enhancements
-
-- **Multiple BSSID Search**: Allow searching for multiple BSSIDs at once
+- **Cell Tower Tracking**: Find cell tower locations
 - **Export Results**: Download search results as JSON/CSV
 - **Share Links**: Generate shareable URLs for specific locations
-- **Search Filters**: Filter by date range, signal strength, etc.
-- **Real API Integration**: Connect to actual Apple WLOC service
+
+## Deployment
+
+WaveDigger can be deployed for free on Vercel. See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+
+Quick start:
+1. Push to GitHub
+2. Import to Vercel
+3. Add custom domain
+4. Deploy!
 
 ## License
 

@@ -112,9 +112,13 @@ export interface IAppleWLoc {
   numWifiResults?: number;
   app_bundle_id?: string;
   appBundleId?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cell_tower_response?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cellTowerResponse?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cell_tower_request?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cellTowerRequest?: any;
   device_type?: IDeviceType;
   deviceType?: IDeviceType;
@@ -155,6 +159,7 @@ export function serializeRequest(wlocData: IAppleWLoc): Buffer {
   
   // Build the protobuf data structure properly
   // IMPORTANT: protobufjs expects camelCase field names, not snake_case
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const protoData: any = {
     wifiDevices: [],           // camelCase, not wifi_devices
     numWifiResults: -1,        // Use -1 to get results
@@ -171,10 +176,11 @@ export function serializeRequest(wlocData: IAppleWLoc): Buffer {
   }
   
   // Add device type if provided
-  if (wlocData.deviceType || wlocData.device_type) {
+  const deviceType = wlocData.deviceType || wlocData.device_type;
+  if (deviceType) {
     protoData.deviceType = {                  // camelCase, not device_type
-      operatingSystem: (wlocData.deviceType || wlocData.device_type).operatingSystem,  // camelCase
-      model: (wlocData.deviceType || wlocData.device_type).model
+      operatingSystem: deviceType.operatingSystem,  // camelCase
+      model: deviceType.model
     };
   }
   
@@ -220,6 +226,7 @@ export function parseResponse(data: Buffer): IAppleWLoc {
       defaults: true, // Include default values
       arrays: true,   // Always create arrays
       objects: true   // Always create objects
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as any;
     
     // protobufjs returns camelCase field names

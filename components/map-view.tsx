@@ -41,7 +41,8 @@ export default function MapView({
     hoverGradientStart: '#22D3EE',
     hoverGradientEnd: '#5EEAD4'
   });
-  const deckRef = useRef<DeckGL>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const deckRef = useRef<any>(null);
 
   // Check for dark mode and get theme colors
   useEffect(() => {
@@ -80,8 +81,7 @@ export default function MapView({
         ...viewState,
         longitude: lastMarker.position[0],
         latitude: lastMarker.position[1],
-        zoom: 15,
-        transitionDuration: 1000
+        zoom: 15
       });
     }
   }, [markers]);
@@ -163,7 +163,7 @@ export default function MapView({
       <DeckGL
         ref={deckRef}
         viewState={viewState}
-        onViewStateChange={({ viewState }) => setViewState(viewState)}
+        onViewStateChange={({ viewState }) => setViewState(viewState as ViewState)}
         controller={true}
         layers={layers}
         style={{ width: '100%', height: '100%' }}
@@ -185,7 +185,7 @@ export default function MapView({
               color: isDarkMode ? '#666666' : 'white',
               intensity: isDarkMode ? 0.2 : 0.4
             }}
-            // @ts-expect-error
+            // @ts-expect-error - Mapbox GL JS v3 has updated types not yet in react-map-gl
             configureMapStyle={(style) => {
               if (isDarkMode) {
                 return {

@@ -57,13 +57,10 @@ async function queryAppleWLOC(bssid: string, useChina: boolean = false): Promise
     const isGzipped = responseBuffer.length > 2 && responseBuffer[0] === 0x1f && responseBuffer[1] === 0x8b;
     if (isGzipped) {
       try {
-        const { ungzip } = await import('node:zlib').then(m => m.promisify ? 
-          { ungzip: m.promisify(m.gunzip) } : 
-          { ungzip: (buf: Buffer) => new Promise<Buffer>((resolve, reject) => 
-            m.gunzip(buf, (err, result) => err ? reject(err) : resolve(result))
-          )}
-        );
-        responseBuffer = await ungzip(responseBuffer);
+        const zlib = await import('node:zlib');
+        const { promisify } = await import('node:util');
+        const ungzip = promisify(zlib.gunzip);
+        responseBuffer = Buffer.from(await ungzip(responseBuffer));
       } catch (error) {
         throw new Error('Failed to decompress response');
       }
