@@ -67,11 +67,11 @@ export default function Home() {
   return (
     <div className="h-screen flex flex-col gradient-mesh-vibrant" style={{ background: 'var(--bg-primary)' }}>
       {/* Header */}
-      <header className="glass z-50 border-b backdrop-blur-md flex-shrink-0" style={{ 
+      <header className="z-50 border-b backdrop-blur-md flex-shrink-0 header-gradient" style={{ 
         borderColor: 'var(--border-primary)',
-        boxShadow: 'var(--shadow-md)'
+        boxShadow: '0 4px 20px 0 rgba(147, 129, 255, 0.15), 0 2px 10px 0 rgba(34, 211, 238, 0.12)'
       }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="px-6 sm:px-8 lg:px-12 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">

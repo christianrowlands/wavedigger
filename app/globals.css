@@ -698,6 +698,57 @@ body {
     0 2px 8px 0 rgba(0, 0, 0, 0.2);
 }
 
+/* Header Gradient - Light Theme Only */
+.header-gradient {
+  background: 
+    linear-gradient(135deg, 
+      rgba(147, 129, 255, 0.25) 0%, 
+      rgba(199, 163, 255, 0.20) 25%,
+      rgba(34, 211, 238, 0.15) 50%,
+      rgba(94, 234, 212, 0.18) 65%,
+      rgba(147, 129, 255, 0.22) 100%),
+    linear-gradient(to right, 
+      rgba(249, 247, 255, 0.9),
+      rgba(240, 249, 255, 0.9));
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(147, 129, 255, 0.2);
+}
+
+/* Dark theme uses original glass style */
+[data-theme="dark"] .header-gradient {
+  background: var(--glass-background);
+}
+
+[data-theme="dark"] .header-gradient::before {
+  display: none;
+}
+
+.header-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Loading Skeleton */
 .skeleton {
   background: linear-gradient(
