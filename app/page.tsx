@@ -1,103 +1,146 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import BSSIDSearch from '@/components/bssid-search';
+import type { BSSIDSearchResult, MapMarker, SearchError } from '@/types';
+import { Info } from 'lucide-react';
+
+// Dynamic import for deck.gl to avoid SSR issues
+const MapView = dynamic(() => import('@/components/map-view'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center">
+      <p className="text-gray-500">Loading map...</p>
+    </div>
+  ),
+});
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [markers, setMarkers] = useState<MapMarker[]>([]);
+  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
+  const [searchHistory, setSearchHistory] = useState<BSSIDSearchResult[]>([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleSearchResult = useCallback((result: BSSIDSearchResult) => {
+    const newMarker: MapMarker = {
+      id: `${result.bssid}-${Date.now()}`,
+      bssid: result.bssid,
+      position: [result.location.longitude, result.location.latitude],
+      location: result.location,
+    };
+    
+    setMarkers(prev => [...prev, newMarker]);
+    setSearchHistory(prev => [result, ...prev.slice(0, 9)]);
+    setSelectedMarker(newMarker);
+  }, []);
+
+  const handleMarkerClick = useCallback((marker: MapMarker) => {
+    setSelectedMarker(marker);
+  }, []);
+
+  const handleClearAll = () => {
+    setMarkers([]);
+    setSelectedMarker(null);
+    setSearchHistory([]);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-gray-900">BSSID Location Search</h1>
+            <button
+              onClick={handleClearAll}
+              className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              disabled={markers.length === 0}
+            >
+              Clear All
+            </button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      </header>
+
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
+        {/* Sidebar */}
+        <div className="lg:w-96 bg-white shadow-lg z-10 overflow-y-auto">
+          <div className="p-6 space-y-6">
+            {/* Search Section */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Search for BSSID</h2>
+              <BSSIDSearch onSearchResult={handleSearchResult} />
+            </div>
+
+            {/* Service Description */}
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div className="text-sm text-gray-700">
+                  <p className="font-semibold mb-1">What is this service?</p>
+                  <p className="mb-2">
+                    This tool queries Apple's location database to find the approximate location 
+                    of Wi-Fi access points based on their BSSID (MAC address).
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Note: This is a demonstration using mock data. In production, this would 
+                    connect to Apple's WLOC API service.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Selected Marker Info */}
+            {selectedMarker && (
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-2">Selected Location</h3>
+                <div className="bg-gray-50 p-3 rounded text-sm space-y-1">
+                  <p><span className="font-medium">BSSID:</span> {selectedMarker.bssid}</p>
+                  <p><span className="font-medium">Latitude:</span> {selectedMarker.location.latitude.toFixed(6)}</p>
+                  <p><span className="font-medium">Longitude:</span> {selectedMarker.location.longitude.toFixed(6)}</p>
+                  {selectedMarker.location.altitude && (
+                    <p><span className="font-medium">Altitude:</span> {selectedMarker.location.altitude.toFixed(1)}m</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Search History */}
+            {searchHistory.length > 0 && (
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-2">Search History</h3>
+                <div className="space-y-2">
+                  {searchHistory.map((result, index) => (
+                    <div
+                      key={`${result.bssid}-${index}`}
+                      className="text-sm bg-gray-50 p-2 rounded cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => {
+                        const marker = markers.find(m => m.bssid === result.bssid);
+                        if (marker) setSelectedMarker(marker);
+                      }}
+                    >
+                      <p className="font-medium">{result.bssid}</p>
+                      <p className="text-xs text-gray-600">
+                        {result.location.latitude.toFixed(4)}, {result.location.longitude.toFixed(4)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Map */}
+        <div className="flex-1 relative">
+          <MapView
+            markers={markers}
+            onMarkerClick={handleMarkerClick}
+            onMarkerHover={setSelectedMarker}
+            mapboxToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        </div>
+      </div>
     </div>
   );
 }
