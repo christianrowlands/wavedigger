@@ -65,9 +65,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen gradient-mesh-vibrant" style={{ background: 'var(--bg-primary)' }}>
+    <div className="h-screen flex flex-col gradient-mesh-vibrant" style={{ background: 'var(--bg-primary)' }}>
       {/* Header */}
-      <header className="glass sticky top-0 z-50 border-b backdrop-blur-md" style={{ 
+      <header className="glass z-50 border-b backdrop-blur-md flex-shrink-0" style={{ 
         borderColor: 'var(--border-primary)',
         boxShadow: 'var(--shadow-md)'
       }}>
@@ -103,7 +103,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         {/* Sidebar */}
         <div className="lg:w-96 z-10 overflow-y-auto transition-all glass-subtle" style={{ 
           background: 'var(--bg-sidebar)',
