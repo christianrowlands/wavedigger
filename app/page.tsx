@@ -80,7 +80,7 @@ export default function Home() {
                 </svg>
               </div>
               <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                BSSID Location Search
+                WaveDigger
               </h1>
             </div>
             <div className="flex items-center gap-3">
@@ -153,15 +153,16 @@ export default function Home() {
                 </div>
                 <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <p className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                    What is this service?
+                    What is WaveDigger?
                   </p>
                   <p className="mb-2 leading-relaxed">
-                    This tool queries Apple&apos;s location database to find the approximate location 
-                    of Wi-Fi access points based on their BSSID (MAC address).
+                    WaveDigger digs into wireless signals to discover their physical locations. 
+                    Currently supporting Wi-Fi access points (BSSID/MAC address), with cell tower 
+                    tracking coming soon.
                   </p>
                   <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                    Note: This queries Apple&apos;s real location database. Not all BSSIDs 
-                    are registered - new or private access points may not be found.
+                    Powered by Apple&apos;s location services. Not all wireless devices are 
+                    registered - new or private signals may not be found.
                   </p>
                 </div>
               </div>

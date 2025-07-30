@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BSSID Location Search",
-  description: "Search for Wi-Fi access point locations using BSSID (MAC address)",
+  title: "WaveDigger",
+  description: "Dig into wireless signals to discover the location of Wi-Fi access points and cell towers",
 };
 
 export default function RootLayout({
