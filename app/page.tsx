@@ -65,12 +65,11 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
+    <div className="min-h-screen gradient-mesh-vibrant" style={{ background: 'var(--bg-primary)' }}>
       {/* Header */}
-      <header className="glass sticky top-0 z-50 border-b" style={{ 
-        background: 'var(--bg-secondary)', 
+      <header className="glass sticky top-0 z-50 border-b backdrop-blur-md" style={{ 
         borderColor: 'var(--border-primary)',
-        boxShadow: 'var(--shadow-sm)'
+        boxShadow: 'var(--shadow-md)'
       }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -106,8 +105,8 @@ export default function Home() {
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
         {/* Sidebar */}
-        <div className="lg:w-96 z-10 overflow-y-auto transition-all" style={{ 
-          background: 'var(--bg-secondary)',
+        <div className="lg:w-96 z-10 overflow-y-auto transition-all glass-subtle" style={{ 
+          background: 'var(--bg-sidebar)',
           borderRight: '1px solid var(--border-primary)',
           boxShadow: 'var(--shadow-lg)'
         }}>
@@ -118,21 +117,22 @@ export default function Home() {
                 <h2 className="text-lg font-semibold">Search for BSSID</h2>
                 <button
                   onClick={() => setIsMultiMode(!isMultiMode)}
-                  className="flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg transition-all"
+                  className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg transition-all hover:scale-105 ${
+                    isMultiMode ? 'gradient-card-1' : 'glass-card'
+                  }`}
                   style={{
-                    background: 'var(--bg-tertiary)',
-                    color: 'var(--text-secondary)',
-                    border: '1px solid var(--border-primary)'
+                    color: 'var(--text-primary)',
+                    fontWeight: isMultiMode ? '600' : '500'
                   }}
                 >
                   {isMultiMode ? (
                     <>
-                      <ToggleRight className="h-4 w-4" style={{ color: 'var(--color-primary-500)' }} />
+                      <ToggleRight className="h-4 w-4" style={{ color: 'var(--color-primary-600)' }} />
                       Multi
                     </>
                   ) : (
                     <>
-                      <ToggleLeft className="h-4 w-4" />
+                      <ToggleLeft className="h-4 w-4" style={{ color: 'var(--color-primary-400)' }} />
                       Single
                     </>
                   )}
@@ -146,17 +146,10 @@ export default function Home() {
             </div>
 
             {/* Service Description */}
-            <div className="rounded-xl p-4 transition-all animate-slideIn glass-card" style={{ 
-              background: 'linear-gradient(135deg, var(--color-info-light) 0%, rgba(56, 189, 248, 0.1) 100%)',
-              border: '1px solid var(--color-info)',
-              boxShadow: '0 4px 15px 0 rgba(56, 189, 248, 0.2)'
-            }}>
+            <div className="rounded-xl p-4 transition-all animate-slideIn glass-secondary shadow-secondary">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{
-                  background: 'var(--color-info)',
-                  color: 'white'
-                }}>
-                  <Info className="h-5 w-5" />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center gradient-secondary shadow-md">
+                  <Info className="h-5 w-5 text-white" />
                 </div>
                 <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                   <p className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
@@ -180,7 +173,7 @@ export default function Home() {
                 <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                   Selected Location
                 </h3>
-                <div className="rounded-lg p-4 space-y-2 transition-all glass-card">
+                <div className="rounded-lg p-4 space-y-2 transition-all glass-primary">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
                     <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>

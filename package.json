@@ -24,6 +24,7 @@
     "protobufjs": "^7.5.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-icons": "^5.5.0",
     "react-map-gl": "^7.1.9"
   },
   "devDependencies": {

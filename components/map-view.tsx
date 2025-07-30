@@ -6,6 +6,7 @@ import { Map as MapGL } from 'react-map-gl';
 import { IconLayer } from '@deck.gl/layers';
 import type { PickingInfo } from '@deck.gl/core';
 import type { ViewState, MapMarker } from '@/types';
+import { getMapIcon } from './map-icons';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapViewProps {
@@ -16,59 +17,14 @@ interface MapViewProps {
 }
 
 const INITIAL_VIEW_STATE: ViewState = {
-  longitude: -122.4194,
-  latitude: 37.7749,
-  zoom: 11,
+  longitude: -98.5795,
+  latitude: 39.8283,
+  zoom: 4,
   pitch: 0,
   bearing: 0
 };
 
-// WiFi icon SVG as data URL
-const WIFI_ICON = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
-  <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="wifi-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
-        <stop offset="100%" style="stop-color:#6366F1;stop-opacity:1" />
-      </linearGradient>
-      <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15"/>
-      </filter>
-    </defs>
-    <!-- Background circle -->
-    <circle cx="24" cy="38" r="18" fill="white" filter="url(#shadow)"/>
-    <circle cx="24" cy="38" r="16" fill="url(#wifi-gradient)"/>
-    <!-- WiFi signal bars -->
-    <path d="M24 30 Q20 26 16 26 Q24 20 32 26 Q28 26 24 30" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
-    <path d="M24 33 Q21 30 18 30 Q24 25 30 30 Q27 30 24 33" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
-    <path d="M24 36 Q22.5 34 20 34 Q24 30 28 34 Q25.5 34 24 36" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
-    <!-- Center dot -->
-    <circle cx="24" cy="38" r="2.5" fill="white"/>
-  </svg>
-`)}`;
 
-const WIFI_ICON_HOVER = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
-  <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="wifi-gradient-hover" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" style="stop-color:#F97316;stop-opacity:1" />
-        <stop offset="100%" style="stop-color:#FB923C;stop-opacity:1" />
-      </linearGradient>
-      <filter id="shadow-hover" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.25"/>
-      </filter>
-    </defs>
-    <!-- Background circle -->
-    <circle cx="24" cy="38" r="20" fill="white" filter="url(#shadow-hover)"/>
-    <circle cx="24" cy="38" r="18" fill="url(#wifi-gradient-hover)"/>
-    <!-- WiFi signal bars with animation -->
-    <path d="M24 30 Q20 26 16 26 Q24 20 32 26 Q28 26 24 30" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
-    <path d="M24 33 Q21 30 18 30 Q24 25 30 30 Q27 30 24 33" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
-    <path d="M24 36 Q22.5 34 20 34 Q24 30 28 34 Q25.5 34 24 36" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
-    <!-- Center dot -->
-    <circle cx="24" cy="38" r="3" fill="white"/>
-  </svg>
-`)}`;
 
 export default function MapView({ 
   markers, 
@@ -79,20 +35,35 @@ export default function MapView({
   const [viewState, setViewState] = useState<ViewState>(INITIAL_VIEW_STATE);
   const [hoveredMarker, setHoveredMarker] = useState<MapMarker | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const deckRef = useRef<any>(null);
+  const [iconColors, setIconColors] = useState({
+    gradientStart: '#9381FF',
+    gradientEnd: '#C7A3FF',
+    hoverGradientStart: '#22D3EE',
+    hoverGradientEnd: '#5EEAD4'
+  });
+  const deckRef = useRef<DeckGL>(null);
 
-  // Check for dark mode
+  // Check for dark mode and get theme colors
   useEffect(() => {
-    const checkDarkMode = () => {
+    const updateTheme = () => {
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
       setIsDarkMode(isDark);
+      
+      // Get CSS variable values
+      const computedStyle = getComputedStyle(document.documentElement);
+      setIconColors({
+        gradientStart: computedStyle.getPropertyValue('--icon-gradient-start').trim(),
+        gradientEnd: computedStyle.getPropertyValue('--icon-gradient-end').trim(),
+        hoverGradientStart: computedStyle.getPropertyValue('--icon-hover-gradient-start').trim(),
+        hoverGradientEnd: computedStyle.getPropertyValue('--icon-hover-gradient-end').trim()
+      });
     };
     
     // Initial check
-    checkDarkMode();
+    updateTheme();
     
     // Watch for theme changes
-    const observer = new MutationObserver(checkDarkMode);
+    const observer = new MutationObserver(updateTheme);
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['data-theme']
@@ -131,6 +102,10 @@ export default function MapView({
     }
   }, [onMarkerClick]);
 
+  // Create icons with current theme colors
+  const wifiIcon = getMapIcon('location-wifi', iconColors.gradientStart, iconColors.hoverGradientStart, false);
+  const wifiIconHover = getMapIcon('location-wifi', iconColors.gradientStart, iconColors.hoverGradientStart, true);
+
   const layers = [
     new IconLayer({
       id: 'bssid-markers',
@@ -138,7 +113,7 @@ export default function MapView({
       pickable: true,
       getPosition: (d: MapMarker) => d.position,
       getIcon: (d: MapMarker) => ({
-        url: hoveredMarker?.id === d.id ? WIFI_ICON_HOVER : WIFI_ICON,
+        url: hoveredMarker?.id === d.id ? wifiIconHover : wifiIcon,
         width: 48,
         height: 48,
         anchorY: 38
@@ -210,7 +185,7 @@ export default function MapView({
               color: isDarkMode ? '#666666' : 'white',
               intensity: isDarkMode ? 0.2 : 0.4
             }}
-            // @ts-ignore
+            // @ts-expect-error
             configureMapStyle={(style) => {
               if (isDarkMode) {
                 return {

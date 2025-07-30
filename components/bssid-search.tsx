@@ -162,25 +162,22 @@ export default function BSSIDSearch({
         <div className="space-y-2">
           <p className="text-sm text-gray-600">Recent searches:</p>
           <div className="flex flex-wrap gap-2">
-            {recentSearches.map(bssid => (
+            {recentSearches.map((bssid, index) => (
               <button
                 key={bssid}
                 onClick={() => handleRecentSearch(bssid)}
-                className="text-xs px-3 py-1 rounded-full transition-all hover:scale-105 glass-subtle"
+                className={`text-xs px-3 py-1 rounded-full transition-all hover:scale-105 hover:-translate-y-0.5 hover:shadow-md ${
+                  index % 3 === 0 
+                    ? 'gradient-card-1' 
+                    : index % 3 === 1 
+                    ? 'gradient-card-2'
+                    : 'gradient-card-3'
+                }`}
                 style={{
-                  background: 'var(--bg-tertiary)',
-                  border: '1px solid var(--border-primary)',
-                  color: 'var(--text-secondary)'
+                  color: 'var(--text-primary)',
+                  fontWeight: '500'
                 }}
                 disabled={isLoading}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--bg-hover)';
-                  e.currentTarget.style.borderColor = 'var(--color-primary-300)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--bg-tertiary)';
-                  e.currentTarget.style.borderColor = 'var(--border-primary)';
-                }}
               >
                 {bssid}
               </button>
