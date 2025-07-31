@@ -55,12 +55,14 @@ export default function ThemeToggle() {
     
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update theme when state changes
   useEffect(() => {
     applyTheme(theme);
     localStorage.setItem('theme', theme);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme]);
 
   const cycleTheme = () => {

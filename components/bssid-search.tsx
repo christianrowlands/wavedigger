@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback } from 'react';
 import { Search, Loader2, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { validateAndNormalizeBSSID } from '@/lib/bssid-utils';
@@ -130,22 +129,23 @@ export default function BSSIDSearch({
         <button 
           onClick={handleSearch} 
           disabled={isLoading || !input.trim()}
-          className={`btn-primary flex items-center justify-center gap-2 min-w-[120px] ${isLoading || !input.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`btn-primary flex items-center justify-center gap-2 px-3 sm:px-4 ${isLoading || !input.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
           style={{
             background: isLoading || !input.trim() ? 'var(--bg-tertiary)' : undefined,
             color: isLoading || !input.trim() ? 'var(--text-tertiary)' : undefined,
             boxShadow: isLoading || !input.trim() ? 'none' : undefined
           }}
+          title={isLoading ? 'Searching...' : 'Search for BSSID'}
         >
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Searching</span>
+              <span className="hidden sm:inline">Searching</span>
             </>
           ) : (
             <>
               <Search className="h-4 w-4" />
-              <span>Search</span>
+              <span className="hidden sm:inline">Search</span>
             </>
           )}
         </button>
@@ -185,15 +185,6 @@ export default function BSSIDSearch({
           </div>
         </div>
       )}
-      
-      <div className="text-xs text-gray-500">
-        <p>Supported formats:</p>
-        <ul className="ml-4 mt-1">
-          <li>• AA:BB:CC:DD:EE:FF (colons)</li>
-          <li>• AA-BB-CC-DD-EE-FF (dashes)</li>
-          <li>• AABBCCDDEEFF (no separators)</li>
-        </ul>
-      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChevronUp } from 'lucide-react';
 import type { MapMarker, BSSIDSearchResult } from '@/types';
 

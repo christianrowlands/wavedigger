@@ -77,12 +77,12 @@ export default function MapView({
   useEffect(() => {
     if (markers.length > 0) {
       const lastMarker = markers[markers.length - 1];
-      setViewState({
-        ...viewState,
+      setViewState(v => ({
+        ...v,
         longitude: lastMarker.position[0],
         latitude: lastMarker.position[1],
         zoom: 15
-      });
+      }));
     }
   }, [markers]);
 

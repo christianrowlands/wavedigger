@@ -27,23 +27,24 @@ export default function SearchControls({
         {!compact && <h2 className="text-lg font-semibold">Search for BSSID</h2>}
         <button
           onClick={onToggleMode}
-          className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg transition-all hover:scale-105 ${
+          className={`flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3 py-1.5 rounded-lg transition-all hover:scale-105 ${
             isMultiMode ? 'gradient-card-1' : 'glass-card'
           } ${compact ? 'ml-auto' : ''}`}
           style={{
             color: 'var(--text-primary)',
             fontWeight: isMultiMode ? '600' : '500'
           }}
+          title={isMultiMode ? 'Switch to single BSSID mode' : 'Switch to multi BSSID mode'}
         >
           {isMultiMode ? (
             <>
-              <ToggleRight className="h-4 w-4" style={{ color: 'var(--color-primary-600)' }} />
-              Multi
+              <ToggleRight className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: 'var(--color-primary-600)' }} />
+              <span>Multi</span>
             </>
           ) : (
             <>
-              <ToggleLeft className="h-4 w-4" style={{ color: 'var(--color-primary-400)' }} />
-              Single
+              <ToggleLeft className="h-3 w-3 sm:h-4 sm:w-4" style={{ color: 'var(--color-primary-400)' }} />
+              <span>Single</span>
             </>
           )}
         </button>

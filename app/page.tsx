@@ -6,7 +6,7 @@ import ThemeToggle from '@/components/theme-toggle';
 import AboutDialog from '@/components/about-dialog';
 import MobileSheet from '@/components/mobile-sheet';
 import SearchControls from '@/components/search-controls';
-import type { BSSIDSearchResult, MapMarker, SearchError } from '@/types';
+import type { BSSIDSearchResult, MapMarker } from '@/types';
 
 // Dynamic import for deck.gl to avoid SSR issues
 const MapView = dynamic(() => import('@/components/map-view'), {
@@ -71,24 +71,24 @@ export default function Home() {
         borderColor: 'var(--border-primary)',
         boxShadow: '0 4px 20px 0 rgba(147, 129, 255, 0.15), 0 2px 10px 0 rgba(34, 211, 238, 0.12)'
       }}>
-        <div className="px-6 sm:px-8 lg:px-12 py-4">
+        <div className="px-3 sm:px-6 lg:px-12 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg flex-shrink-0">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
                 WaveDigger
               </h1>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <AboutDialog />
               <ThemeToggle />
               <button
                 onClick={handleClearAll}
-                className="px-4 py-2 text-sm font-medium rounded-lg transition-all hover:scale-105"
+                className="px-2 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all hover:scale-105 flex items-center gap-2"
                 style={{
                   color: markers.length === 0 ? 'var(--text-tertiary)' : 'var(--color-error)',
                   background: markers.length === 0 ? 'transparent' : 'var(--color-error-light)',
@@ -96,8 +96,12 @@ export default function Home() {
                   opacity: markers.length === 0 ? 0.5 : 1
                 }}
                 disabled={markers.length === 0}
+                title="Clear all markers"
               >
-                Clear All
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span className="hidden sm:inline">Clear All</span>
               </button>
             </div>
           </div>

@@ -1,25 +1,10 @@
 import React from 'react';
 import { 
-  FaMapMarkerAlt,
-  FaWifi,
   FaBroadcastTower,
-  FaSatelliteDish
 } from 'react-icons/fa';
-import { 
-  HiWifi,
-  HiLocationMarker
-} from 'react-icons/hi';
 import {
-  MdRouter,
-  MdLocationOn,
-  MdSettingsInputAntenna,
-  MdWifi,
   MdWifiTethering
 } from 'react-icons/md';
-import {
-  BiWifi,
-  BiBroadcast
-} from 'react-icons/bi';
 import { renderToString } from 'react-dom/server';
 
 // Helper to convert React icon to data URL

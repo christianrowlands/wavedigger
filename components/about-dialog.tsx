@@ -5,7 +5,6 @@ import { Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -16,7 +15,7 @@ export default function AboutDialog() {
     <Dialog>
       <DialogTrigger asChild>
         <button
-          className="p-2 rounded-lg transition-all hover:scale-105 glass-card"
+          className="p-2 rounded-lg transition-all hover:scale-105 glass-card flex items-center justify-center"
           style={{
             color: 'var(--text-primary)',
             border: '1px solid var(--border-primary)'
@@ -37,7 +36,7 @@ export default function AboutDialog() {
             </h3>
             <p>
               WaveDigger finds the physical location of Wi-Fi access points using their BSSID 
-              (MAC address). Enter any BSSID and if it's in the database, you'll see its 
+              (MAC address). Enter any BSSID and if it&apos;s in the database, you&apos;ll see its 
               approximate location on the map.
             </p>
           </section>
@@ -47,7 +46,7 @@ export default function AboutDialog() {
               How does it work?
             </h3>
             <p>
-              This app queries Apple's location services database, which contains locations of 
+              This app queries Apple&apos;s location services database, which contains locations of 
               millions of Wi-Fi access points worldwide. These locations are crowdsourced from 
               iOS devices that have location services enabled.
             </p>
@@ -103,7 +102,7 @@ export default function AboutDialog() {
               >
                 apple-corelocation-experiments
               </a>{' '}
-              project. Their work in reverse engineering Apple's location services API made 
+              project. Their work in reverse engineering Apple&apos;s location services API made 
               this tool possible.
             </p>
           </section>

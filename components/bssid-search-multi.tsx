@@ -139,7 +139,7 @@ export default function MultiBSSIDSearch({
           } else {
             errors.push(`${bssid}: ${data.error?.message || 'Not found'}`);
           }
-        } catch (err) {
+        } catch {
           errors.push(`${bssid}: Network error`);
         }
       }
@@ -210,31 +210,36 @@ export default function MultiBSSIDSearch({
             size="sm"
             onClick={addInput}
             disabled={isLoading}
+            className="px-2 sm:px-3"
+            title="Add another BSSID field"
           >
-            <Plus className="h-4 w-4 mr-1" />
-            Add BSSID
+            <Plus className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Add BSSID</span>
           </Button>
         )}
         
         <button 
           onClick={handleSearch} 
           disabled={isLoading || inputs.every(i => !i.value)}
-          className={`flex-1 btn-primary flex items-center justify-center gap-2 ${isLoading || inputs.every(i => !i.value) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`flex-1 btn-primary flex items-center justify-center gap-2 px-3 sm:px-4 ${isLoading || inputs.every(i => !i.value) ? 'opacity-50 cursor-not-allowed' : ''}`}
           style={{
             background: isLoading || inputs.every(i => !i.value) ? 'var(--bg-tertiary)' : undefined,
             color: isLoading || inputs.every(i => !i.value) ? 'var(--text-tertiary)' : undefined,
             boxShadow: isLoading || inputs.every(i => !i.value) ? 'none' : undefined
           }}
+          title={isLoading ? 'Searching...' : `Search ${inputs.filter(i => i.value && i.isValid).length} BSSID(s)`}
         >
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Searching... {searchProgress > 0 && `${Math.round(searchProgress)}%`}</span>
+              <span className="hidden sm:inline">Searching... {searchProgress > 0 && `${Math.round(searchProgress)}%`}</span>
+              <span className="sm:hidden">{searchProgress > 0 && `${Math.round(searchProgress)}%`}</span>
             </>
           ) : (
             <>
               <Search className="h-4 w-4" />
-              <span>Search {inputs.filter(i => i.value && i.isValid).length} BSSID(s)</span>
+              <span className="hidden sm:inline">Search {inputs.filter(i => i.value && i.isValid).length} BSSID(s)</span>
+              <span className="sm:hidden">{inputs.filter(i => i.value && i.isValid).length}</span>
             </>
           )}
         </button>

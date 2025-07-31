@@ -829,3 +829,39 @@ html {
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Ultra-small screen adjustments */
+@media (max-width: 400px) {
+  /* Further reduce padding and font sizes */
+  .btn-primary {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Ensure buttons have minimum touch target */
+  button {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Compact header adjustments */
+  header {
+    font-size: 0.875rem;
+  }
+}
+
+/* Icon button utility class for proper centering */
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Handle text scaling for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
