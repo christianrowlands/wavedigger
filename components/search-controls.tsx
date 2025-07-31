@@ -12,6 +12,8 @@ interface SearchControlsProps {
   onSearchResult: (result: BSSIDSearchResult) => void;
   onSearchResults: (results: BSSIDSearchResult[]) => void;
   compact?: boolean;
+  isLoadingFromUrl?: boolean;
+  urlBssid?: string | null;
 }
 
 export default function SearchControls({
@@ -19,7 +21,9 @@ export default function SearchControls({
   onToggleMode,
   onSearchResult,
   onSearchResults,
-  compact = false
+  compact = false,
+  isLoadingFromUrl = false,
+  urlBssid = null
 }: SearchControlsProps) {
   // For mobile compact mode, we'll pass the toggle button to the search component
   const toggleButton = (
@@ -49,7 +53,12 @@ export default function SearchControls({
         {isMultiMode ? (
           <MultiBSSIDSearch onSearchResults={onSearchResults} mobileToggle={toggleButton} />
         ) : (
-          <BSSIDSearch onSearchResult={onSearchResult} mobileToggle={toggleButton} />
+          <BSSIDSearch 
+            onSearchResult={onSearchResult} 
+            mobileToggle={toggleButton}
+            isLoadingFromUrl={isLoadingFromUrl}
+            urlBssid={urlBssid}
+          />
         )}
       </div>
     );
@@ -87,7 +96,11 @@ export default function SearchControls({
       {isMultiMode ? (
         <MultiBSSIDSearch onSearchResults={onSearchResults} />
       ) : (
-        <BSSIDSearch onSearchResult={onSearchResult} />
+        <BSSIDSearch 
+          onSearchResult={onSearchResult}
+          isLoadingFromUrl={isLoadingFromUrl}
+          urlBssid={urlBssid}
+        />
       )}
     </div>
   );

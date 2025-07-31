@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import ThemeToggle from '@/components/theme-toggle';
 import AboutDialog from '@/components/about-dialog';
 import MobileSheet from '@/components/mobile-sheet';
 import SearchControls from '@/components/search-controls';
+import ShareButton from '@/components/share-button';
+import { useShareUrl } from '@/hooks/use-share-url';
 import type { BSSIDSearchResult, MapMarker } from '@/types';
 
 // Dynamic import for deck.gl to avoid SSR issues
@@ -18,12 +21,40 @@ const MapView = dynamic(() => import('@/components/map-view'), {
   ),
 });
 
-export default function Home() {
+function HomeContent() {
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
   const [searchHistory, setSearchHistory] = useState<BSSIDSearchResult[]>([]);
   const [isMultiMode, setIsMultiMode] = useState(false);
   const [flyToLocation, setFlyToLocation] = useState<{ longitude: number; latitude: number } | null>(null);
+  const [isLoadingFromUrl, setIsLoadingFromUrl] = useState(false);
+  const [urlBssid, setUrlBssid] = useState<string | null>(null);
+  
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const hasProcessedUrl = useRef(false);
+  const { generateShareUrl } = useShareUrl();
+
+  // Update URL with current search state
+  const updateUrl = useCallback((bssid?: string) => {
+    // Start with existing search params to preserve them
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (bssid) {
+      params.set('bssid', bssid);
+    } else if (!bssid && params.has('bssid')) {
+      params.delete('bssid');
+    }
+    
+    if (isMultiMode) {
+      params.set('mode', 'multi');
+    } else {
+      params.delete('mode');
+    }
+    
+    const queryString = params.toString();
+    router.push(queryString ? `/?${queryString}` : '/', { scroll: false });
+  }, [router, isMultiMode, searchParams]);
 
   const handleSearchResult = useCallback((result: BSSIDSearchResult) => {
     const newMarker: MapMarker = {
@@ -37,7 +68,12 @@ export default function Home() {
     setMarkers(prev => [...prev, newMarker]);
     setSearchHistory(prev => [result, ...prev.slice(0, 9)]);
     setSelectedMarker(newMarker);
-  }, []);
+    
+    // Update URL with the searched BSSID (only if not loading from URL)
+    if (!isLoadingFromUrl) {
+      updateUrl(result.bssid);
+    }
+  }, [updateUrl, isLoadingFromUrl]);
 
   const handleMultiSearchResults = useCallback((results: BSSIDSearchResult[]) => {
     const newMarkers: MapMarker[] = results.map(result => ({
@@ -65,7 +101,64 @@ export default function Home() {
     setMarkers([]);
     setSelectedMarker(null);
     setSearchHistory([]);
+    // Clear URL parameters when clearing all
+    router.push('/');
   };
+
+  // Handle deep linking from URL parameters
+  useEffect(() => {
+    if (hasProcessedUrl.current) return;
+    
+    const bssidParam = searchParams.get('bssid');
+    const modeParam = searchParams.get('mode');
+    const latParam = searchParams.get('lat');
+    const lngParam = searchParams.get('lng');
+    
+    if (modeParam === 'multi') {
+      setIsMultiMode(true);
+    }
+    
+    if (bssidParam && !hasProcessedUrl.current) {
+      hasProcessedUrl.current = true;
+      setIsLoadingFromUrl(true);
+      setUrlBssid(bssidParam);
+      
+      // Search for BSSID from URL
+      const searchBssid = async () => {
+        try {
+          const response = await fetch('/api/bssid', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ bssid: bssidParam }),
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok && data.result) {
+            handleSearchResult(data.result);
+            
+            // If lat/lng provided, fly to that location
+            if (latParam && lngParam) {
+              const lat = parseFloat(latParam);
+              const lng = parseFloat(lngParam);
+              if (!isNaN(lat) && !isNaN(lng)) {
+                setFlyToLocation({ latitude: lat, longitude: lng });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error loading shared BSSID:', error);
+        } finally {
+          setIsLoadingFromUrl(false);
+          setUrlBssid(null);
+        }
+      };
+      
+      searchBssid();
+    }
+  }, [searchParams, handleSearchResult]);
 
   return (
     <div className="h-full flex flex-col gradient-mesh-vibrant mobile-no-overscroll" style={{ background: 'var(--bg-primary)', position: 'fixed', inset: 0 }}>
@@ -125,22 +218,35 @@ export default function Home() {
               onToggleMode={() => setIsMultiMode(!isMultiMode)}
               onSearchResult={handleSearchResult}
               onSearchResults={handleMultiSearchResults}
+              isLoadingFromUrl={isLoadingFromUrl}
+              urlBssid={urlBssid}
             />
 
             {/* Selected Marker Info */}
             {selectedMarker && (
               <div className="border-t pt-4 animate-slideIn" style={{ borderColor: 'var(--border-primary)' }}>
-                <h3 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                  Selected Location
-                  {selectedMarker.source === 'china' && (
-                    <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
-                      backgroundColor: '#EE1C25', 
-                      color: 'white' 
-                    }}>
-                      CN
-                    </span>
-                  )}
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                    Selected Location
+                    {selectedMarker.source === 'china' && (
+                      <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
+                        backgroundColor: '#EE1C25', 
+                        color: 'white' 
+                      }}>
+                        CN
+                      </span>
+                    )}
+                  </h3>
+                  <ShareButton 
+                    url={generateShareUrl({ 
+                      bssid: selectedMarker.bssid,
+                      latitude: selectedMarker.location.latitude,
+                      longitude: selectedMarker.location.longitude,
+                      mode: isMultiMode ? 'multi' : 'single'
+                    })}
+                    variant="icon"
+                  />
+                </div>
                 <div className="rounded-lg p-4 space-y-2 transition-all glass-primary">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
@@ -182,7 +288,7 @@ export default function Home() {
                   {searchHistory.map((result, index) => (
                     <div
                       key={`${result.bssid}-${index}`}
-                      className="rounded-lg p-3 cursor-pointer card-hover glass-card animate-fadeIn"
+                      className="rounded-lg p-3 cursor-pointer card-hover glass-card animate-fadeIn group relative"
                       style={{ 
                         animationDelay: `${index * 50}ms`
                       }}
@@ -197,24 +303,43 @@ export default function Home() {
                         }
                       }}
                     >
-                      <p className="font-medium font-mono text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                        {result.bssid}
-                        {result.source === 'china' && (
-                          <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
-                            backgroundColor: '#EE1C25', 
-                            color: 'white' 
-                          }}>
-                            CN
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--text-tertiary)' }}>
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {result.location.latitude.toFixed(4)}, {result.location.longitude.toFixed(4)}
-                      </p>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium font-mono text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                            {result.bssid}
+                            {result.source === 'china' && (
+                              <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
+                                backgroundColor: '#EE1C25', 
+                                color: 'white' 
+                              }}>
+                                CN
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--text-tertiary)' }}>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {result.location.latitude.toFixed(4)}, {result.location.longitude.toFixed(4)}
+                          </p>
+                        </div>
+                        <div 
+                          className="opacity-0 group-hover:opacity-100 transition-opacity" 
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ShareButton 
+                            url={generateShareUrl({ 
+                              bssid: result.bssid,
+                              latitude: result.location.latitude,
+                              longitude: result.location.longitude,
+                              mode: isMultiMode ? 'multi' : 'single'
+                            })}
+                            variant="icon"
+                            className="!p-1"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -233,6 +358,42 @@ export default function Home() {
             flyToLocation={flyToLocation}
           />
           
+          {/* Loading overlay for URL-based searches */}
+          {isLoadingFromUrl && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0, 0, 0, 0.5)' }}>
+              <div className="glass-card rounded-xl p-6 max-w-sm mx-4 animate-fadeIn" style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-primary)',
+                boxShadow: 'var(--shadow-xl)'
+              }}>
+                <div className="flex flex-col items-center space-y-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-4 border-t-transparent animate-spin" style={{ 
+                      borderColor: 'var(--color-primary-500)',
+                      borderTopColor: 'transparent'
+                    }} />
+                    <svg className="absolute inset-0 w-16 h-16 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+                    </svg>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
+                      Loading Shared Location
+                    </p>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Searching for BSSID
+                    </p>
+                    {urlBssid && (
+                      <p className="text-xs font-mono mt-2 break-all" style={{ color: 'var(--text-tertiary)' }}>
+                        {urlBssid}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {/* Mobile Search Bar - Floating on top of map */}
           <div className="lg:hidden absolute top-2 left-2 right-2 z-30">
             <div className="glass-card rounded-xl p-2 shadow-lg" style={{
@@ -245,6 +406,8 @@ export default function Home() {
                 onSearchResult={handleSearchResult}
                 onSearchResults={handleMultiSearchResults}
                 compact={true}
+                isLoadingFromUrl={isLoadingFromUrl}
+                urlBssid={urlBssid}
               />
             </div>
           </div>
@@ -268,5 +431,22 @@ export default function Home() {
         </MobileSheet>
       </div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="h-full flex items-center justify-center gradient-mesh-vibrant" style={{ background: 'var(--bg-primary)', position: 'fixed', inset: 0 }}>
+        <div className="animate-pulse">
+          <div className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin" style={{ 
+            borderColor: 'var(--color-primary-500)',
+            borderTopColor: 'transparent'
+          }} />
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

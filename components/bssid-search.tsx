@@ -12,13 +12,17 @@ interface BSSIDSearchProps {
   onSearchStart?: () => void;
   onSearchError?: (error: SearchError) => void;
   mobileToggle?: React.ReactNode;
+  isLoadingFromUrl?: boolean;
+  urlBssid?: string | null;
 }
 
 export default function BSSIDSearch({ 
   onSearchResult, 
   onSearchStart,
   onSearchError,
-  mobileToggle 
+  mobileToggle,
+  isLoadingFromUrl = false,
+  urlBssid = null
 }: BSSIDSearchProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -124,26 +128,26 @@ export default function BSSIDSearch({
         {mobileToggle && <div className="lg:hidden">{mobileToggle}</div>}
         <Input
           type="text"
-          placeholder="Enter BSSID"
-          value={input}
+          placeholder={isLoadingFromUrl ? "Loading shared BSSID..." : "Enter BSSID"}
+          value={isLoadingFromUrl && urlBssid ? urlBssid : input}
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}
-          disabled={isLoading}
-          className={`flex-1 min-w-0 ${error ? 'border-red-500' : ''}`}
+          disabled={isLoading || isLoadingFromUrl}
+          className={`flex-1 min-w-0 ${error ? 'border-red-500' : ''} ${isLoadingFromUrl ? 'animate-pulse' : ''}`}
           variant="modern"
         />
         <button 
           onClick={() => handleSearch()} 
-          disabled={isLoading || !input.trim()}
-          className={`btn-primary flex items-center justify-center px-2 sm:px-3 flex-shrink-0 ${isLoading || !input.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl}
+          className={`btn-primary flex items-center justify-center px-2 sm:px-3 flex-shrink-0 ${isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl ? 'opacity-50 cursor-not-allowed' : ''}`}
           style={{
-            background: isLoading || !input.trim() ? 'var(--bg-tertiary)' : undefined,
-            color: isLoading || !input.trim() ? 'var(--text-tertiary)' : undefined,
-            boxShadow: isLoading || !input.trim() ? 'none' : undefined
+            background: isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl ? 'var(--bg-tertiary)' : undefined,
+            color: isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl ? 'var(--text-tertiary)' : undefined,
+            boxShadow: isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl ? 'none' : undefined
           }}
-          title={isLoading ? 'Searching...' : 'Search for BSSID'}
+          title={isLoadingFromUrl ? 'Loading shared BSSID...' : isLoading ? 'Searching...' : 'Search for BSSID'}
         >
-          {isLoading ? (
+          {isLoadingFromUrl || isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="hidden sm:inline ml-2">Searching</span>
@@ -183,7 +187,7 @@ export default function BSSIDSearch({
                   color: 'var(--text-primary)',
                   fontWeight: '500'
                 }}
-                disabled={isLoading}
+                disabled={isLoading || isLoadingFromUrl}
               >
                 {bssid}
               </button>

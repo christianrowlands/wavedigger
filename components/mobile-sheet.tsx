@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import ShareButton from '@/components/share-button';
+import { useShareUrl } from '@/hooks/use-share-url';
 import type { MapMarker, BSSIDSearchResult } from '@/types';
 
 interface MobileSheetProps {
@@ -36,6 +38,7 @@ export default function MobileSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const dragHandleRef = useRef<HTMLDivElement>(null);
+  const { generateShareUrl } = useShareUrl();
   
   // Calculate max height based on window size
   const getMaxHeight = () => {
@@ -245,17 +248,28 @@ export default function MobileSheet({
           {/* Selected Marker - Only when expanded */}
           {selectedMarker && sheetState !== 'closed' && (
             <div className="mb-4 p-3 rounded-lg glass-primary">
-              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                Selected Location
-                {selectedMarker.source === 'china' && (
-                  <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
-                    backgroundColor: '#EE1C25', 
-                    color: 'white' 
-                  }}>
-                    CN
-                  </span>
-                )}
-              </h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  Selected Location
+                  {selectedMarker.source === 'china' && (
+                    <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
+                      backgroundColor: '#EE1C25', 
+                      color: 'white' 
+                    }}>
+                      CN
+                    </span>
+                  )}
+                </h4>
+                <ShareButton 
+                  url={generateShareUrl({ 
+                    bssid: selectedMarker.bssid,
+                    latitude: selectedMarker.location.latitude,
+                    longitude: selectedMarker.location.longitude
+                  })}
+                  variant="icon"
+                  className="!p-1"
+                />
+              </div>
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
