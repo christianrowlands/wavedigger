@@ -14,6 +14,7 @@ interface MapViewProps {
   onMarkerClick?: (marker: MapMarker) => void;
   onMarkerHover?: (marker: MapMarker | null) => void;
   mapboxToken?: string;
+  flyToLocation?: { longitude: number; latitude: number } | null;
 }
 
 const INITIAL_VIEW_STATE: ViewState = {
@@ -30,7 +31,8 @@ export default function MapView({
   markers, 
   onMarkerClick, 
   onMarkerHover,
-  mapboxToken 
+  mapboxToken,
+  flyToLocation 
 }: MapViewProps) {
   const [viewState, setViewState] = useState<ViewState>(INITIAL_VIEW_STATE);
   const [hoveredMarker, setHoveredMarker] = useState<MapMarker | null>(null);
@@ -85,6 +87,18 @@ export default function MapView({
       }));
     }
   }, [markers]);
+
+  // Fly to location when requested
+  useEffect(() => {
+    if (flyToLocation) {
+      setViewState(v => ({
+        ...v,
+        longitude: flyToLocation.longitude,
+        latitude: flyToLocation.latitude,
+        zoom: 15
+      }));
+    }
+  }, [flyToLocation]);
 
   const handleHover = useCallback((info: PickingInfo) => {
     if (info.object) {

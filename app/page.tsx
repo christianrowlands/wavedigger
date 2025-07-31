@@ -23,6 +23,7 @@ export default function Home() {
   const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
   const [searchHistory, setSearchHistory] = useState<BSSIDSearchResult[]>([]);
   const [isMultiMode, setIsMultiMode] = useState(false);
+  const [flyToLocation, setFlyToLocation] = useState<{ longitude: number; latitude: number } | null>(null);
 
   const handleSearchResult = useCallback((result: BSSIDSearchResult) => {
     const newMarker: MapMarker = {
@@ -187,7 +188,13 @@ export default function Home() {
                       }}
                       onClick={() => {
                         const marker = markers.find(m => m.bssid === result.bssid);
-                        if (marker) setSelectedMarker(marker);
+                        if (marker) {
+                          setSelectedMarker(marker);
+                          setFlyToLocation({
+                            longitude: marker.position[0],
+                            latitude: marker.position[1]
+                          });
+                        }
                       }}
                     >
                       <p className="font-medium font-mono text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
@@ -223,6 +230,7 @@ export default function Home() {
             onMarkerClick={handleMarkerClick}
             onMarkerHover={setSelectedMarker}
             mapboxToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+            flyToLocation={flyToLocation}
           />
           
           {/* Mobile Search Bar - Floating on top of map */}
@@ -246,7 +254,13 @@ export default function Home() {
         <MobileSheet
           selectedMarker={selectedMarker}
           searchHistory={searchHistory}
-          onMarkerSelect={setSelectedMarker}
+          onMarkerSelect={(marker) => {
+            setSelectedMarker(marker);
+            setFlyToLocation({
+              longitude: marker.position[0],
+              latitude: marker.position[1]
+            });
+          }}
         >
           <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
             {searchHistory.length} locations found
