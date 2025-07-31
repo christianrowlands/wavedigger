@@ -44,12 +44,15 @@ export default function BSSIDSearch({
     }
   }, [error]);
 
-  const handleSearch = async () => {
+  const handleSearch = async (bssidOverride?: string) => {
     // Clear previous error
     setError(null);
     
+    // Use provided BSSID or fall back to input state
+    const bssidToValidate = bssidOverride || input;
+    
     // Validate BSSID
-    const validation = validateAndNormalizeBSSID(input);
+    const validation = validateAndNormalizeBSSID(bssidToValidate);
     
     if (!validation.isValid) {
       setError(validation.error || 'Invalid BSSID format');
@@ -112,7 +115,7 @@ export default function BSSIDSearch({
 
   const handleRecentSearch = (bssid: string) => {
     setInput(bssid);
-    handleSearch();
+    handleSearch(bssid);
   };
 
   return (
@@ -130,7 +133,7 @@ export default function BSSIDSearch({
           variant="modern"
         />
         <button 
-          onClick={handleSearch} 
+          onClick={() => handleSearch()} 
           disabled={isLoading || !input.trim()}
           className={`btn-primary flex items-center justify-center px-2 sm:px-3 flex-shrink-0 ${isLoading || !input.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
           style={{
