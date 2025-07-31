@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { formatBSSIDForURL } from '@/lib/bssid-utils';
 
 interface ShareUrlOptions {
   bssid?: string;
@@ -13,7 +14,8 @@ export function useShareUrl() {
     const params = new URLSearchParams();
     
     if (options.bssid) {
-      params.set('bssid', options.bssid);
+      // Format BSSID with hyphens for cleaner URLs
+      params.set('bssid', formatBSSIDForURL(options.bssid));
     }
     
     if (options.latitude !== undefined && options.longitude !== undefined) {

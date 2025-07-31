@@ -59,6 +59,20 @@ export function formatBSSIDForDisplay(bssid: string): string {
   return normalized || bssid;
 }
 
+// Format BSSID for URLs using hyphens instead of colons
+export function formatBSSIDForURL(bssid: string): string {
+  const normalized = normalizeBSSID(bssid);
+  if (!normalized) return bssid;
+  // Replace colons with hyphens for cleaner URLs
+  return normalized.replace(/:/g, '-');
+}
+
+// Parse BSSID from URL (accepts both hyphen and colon formats)
+export function parseBSSIDFromURL(bssid: string): string {
+  // First normalize it (handles colons, hyphens, or no separators)
+  return normalizeBSSID(bssid) || bssid;
+}
+
 export interface BSSIDValidationResult {
   isValid: boolean;
   normalized: string | null;

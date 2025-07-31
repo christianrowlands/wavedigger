@@ -84,7 +84,6 @@ Note: Not all BSSIDs are in Apple's database. Newly deployed or private access p
 
 - **Cell Tower Tracking**: Find cell tower locations
 - **Export Results**: Download search results as JSON/CSV
-- **Share Links**: Generate shareable URLs for specific locations
 
 ## Deployment
 

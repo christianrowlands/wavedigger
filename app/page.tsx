@@ -9,6 +9,7 @@ import MobileSheet from '@/components/mobile-sheet';
 import SearchControls from '@/components/search-controls';
 import ShareButton from '@/components/share-button';
 import { useShareUrl } from '@/hooks/use-share-url';
+import { formatBSSIDForURL, parseBSSIDFromURL } from '@/lib/bssid-utils';
 import type { BSSIDSearchResult, MapMarker } from '@/types';
 
 // Dynamic import for deck.gl to avoid SSR issues
@@ -41,7 +42,8 @@ function HomeContent() {
     const params = new URLSearchParams(searchParams.toString());
     
     if (bssid) {
-      params.set('bssid', bssid);
+      // Format BSSID with hyphens for cleaner URLs
+      params.set('bssid', formatBSSIDForURL(bssid));
     } else if (!bssid && params.has('bssid')) {
       params.delete('bssid');
     }
@@ -121,7 +123,10 @@ function HomeContent() {
     if (bssidParam && !hasProcessedUrl.current) {
       hasProcessedUrl.current = true;
       setIsLoadingFromUrl(true);
-      setUrlBssid(bssidParam);
+      
+      // Parse BSSID from URL (handles both colon and hyphen formats)
+      const parsedBssid = parseBSSIDFromURL(bssidParam);
+      setUrlBssid(parsedBssid);
       
       // Search for BSSID from URL
       const searchBssid = async () => {
@@ -131,7 +136,7 @@ function HomeContent() {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ bssid: bssidParam }),
+            body: JSON.stringify({ bssid: parsedBssid }),
           });
           
           const data = await response.json();
