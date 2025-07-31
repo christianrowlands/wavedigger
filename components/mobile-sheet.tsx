@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { ChevronUp } from 'lucide-react';
 import type { MapMarker, BSSIDSearchResult } from '@/types';
 
 interface MobileSheetProps {
@@ -168,6 +167,7 @@ export default function MobileSheet({
     }
   };
 
+
   return (
     <div 
       ref={sheetRef}
@@ -261,20 +261,6 @@ export default function MobileSheet({
                 </div>
               </div>
             </div>
-          )}
-
-          {/* Expand/Collapse Indicator */}
-          {searchHistory.length > 0 && sheetState !== 'full' && (
-            <button
-              onClick={toggleExpanded}
-              className="w-full flex items-center justify-center gap-2 py-2 text-sm"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              <ChevronUp 
-                className={`h-4 w-4 transition-transform ${sheetState === 'closed' ? '' : 'rotate-180'}`} 
-              />
-              {sheetState === 'closed' ? 'Show' : 'Hide'} History ({searchHistory.length})
-            </button>
           )}
 
           {/* Search History - Only when expanded */}
