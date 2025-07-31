@@ -2,11 +2,11 @@
 
 import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import BSSIDSearch from '@/components/bssid-search';
-import MultiBSSIDSearch from '@/components/bssid-search-multi';
 import ThemeToggle from '@/components/theme-toggle';
+import AboutDialog from '@/components/about-dialog';
+import MobileSheet from '@/components/mobile-sheet';
+import SearchControls from '@/components/search-controls';
 import type { BSSIDSearchResult, MapMarker, SearchError } from '@/types';
-import { Info, ToggleLeft, ToggleRight } from 'lucide-react';
 
 // Dynamic import for deck.gl to avoid SSR issues
 const MapView = dynamic(() => import('@/components/map-view'), {
@@ -65,7 +65,7 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen flex flex-col gradient-mesh-vibrant" style={{ background: 'var(--bg-primary)' }}>
+    <div className="h-full flex flex-col gradient-mesh-vibrant mobile-no-overscroll" style={{ background: 'var(--bg-primary)', position: 'fixed', inset: 0 }}>
       {/* Header */}
       <header className="z-50 border-b backdrop-blur-md flex-shrink-0 header-gradient" style={{ 
         borderColor: 'var(--border-primary)',
@@ -84,6 +84,7 @@ export default function Home() {
               </h1>
             </div>
             <div className="flex items-center gap-3">
+              <AboutDialog />
               <ThemeToggle />
               <button
                 onClick={handleClearAll}
@@ -103,70 +104,21 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className="lg:w-96 z-10 overflow-y-auto transition-all glass-subtle" style={{ 
+      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block lg:w-96 z-10 overflow-y-auto transition-all glass-subtle" style={{ 
           background: 'var(--bg-sidebar)',
           borderRight: '1px solid var(--border-primary)',
           boxShadow: 'var(--shadow-lg)'
         }}>
           <div className="p-6 space-y-6 animate-fadeIn">
             {/* Search Section */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Search for BSSID</h2>
-                <button
-                  onClick={() => setIsMultiMode(!isMultiMode)}
-                  className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg transition-all hover:scale-105 ${
-                    isMultiMode ? 'gradient-card-1' : 'glass-card'
-                  }`}
-                  style={{
-                    color: 'var(--text-primary)',
-                    fontWeight: isMultiMode ? '600' : '500'
-                  }}
-                >
-                  {isMultiMode ? (
-                    <>
-                      <ToggleRight className="h-4 w-4" style={{ color: 'var(--color-primary-600)' }} />
-                      Multi
-                    </>
-                  ) : (
-                    <>
-                      <ToggleLeft className="h-4 w-4" style={{ color: 'var(--color-primary-400)' }} />
-                      Single
-                    </>
-                  )}
-                </button>
-              </div>
-              {isMultiMode ? (
-                <MultiBSSIDSearch onSearchResults={handleMultiSearchResults} />
-              ) : (
-                <BSSIDSearch onSearchResult={handleSearchResult} />
-              )}
-            </div>
-
-            {/* Service Description */}
-            <div className="rounded-xl p-4 transition-all animate-slideIn glass-secondary shadow-secondary">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center gradient-secondary shadow-md">
-                  <Info className="h-5 w-5 text-white" />
-                </div>
-                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  <p className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                    What is WaveDigger?
-                  </p>
-                  <p className="mb-2 leading-relaxed">
-                    WaveDigger digs into wireless signals to discover their physical locations. 
-                    Currently supporting Wi-Fi access points (BSSID/MAC address), with cell tower 
-                    tracking coming soon.
-                  </p>
-                  <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                    Powered by Apple&apos;s location services. Not all wireless devices are 
-                    registered - new or private signals may not be found.
-                  </p>
-                </div>
-              </div>
-            </div>
+            <SearchControls
+              isMultiMode={isMultiMode}
+              onToggleMode={() => setIsMultiMode(!isMultiMode)}
+              onSearchResult={handleSearchResult}
+              onSearchResults={handleMultiSearchResults}
+            />
 
             {/* Selected Marker Info */}
             {selectedMarker && (
@@ -235,14 +187,41 @@ export default function Home() {
         </div>
 
         {/* Map */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative mobile-no-overscroll">
           <MapView
             markers={markers}
             onMarkerClick={handleMarkerClick}
             onMarkerHover={setSelectedMarker}
             mapboxToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
           />
+          
+          {/* Mobile Search Bar - Floating on top of map */}
+          <div className="lg:hidden absolute top-4 left-4 right-4 z-30">
+            <div className="glass-card rounded-xl p-4 shadow-lg" style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-primary)'
+            }}>
+              <SearchControls
+                isMultiMode={isMultiMode}
+                onToggleMode={() => setIsMultiMode(!isMultiMode)}
+                onSearchResult={handleSearchResult}
+                onSearchResults={handleMultiSearchResults}
+                compact={true}
+              />
+            </div>
+          </div>
         </div>
+
+        {/* Mobile Bottom Sheet */}
+        <MobileSheet
+          selectedMarker={selectedMarker}
+          searchHistory={searchHistory}
+          onMarkerSelect={setSelectedMarker}
+        >
+          <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            {searchHistory.length} locations found
+          </div>
+        </MobileSheet>
       </div>
     </div>
   );

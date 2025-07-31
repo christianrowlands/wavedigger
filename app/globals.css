@@ -226,6 +226,17 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans);
   line-height: var(--leading-normal);
+  overscroll-behavior-y: contain;
+  /* Prevent pull-to-refresh on mobile */
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+html {
+  overscroll-behavior-y: contain;
+  height: 100%;
 }
 
 /* Custom scrollbar */
@@ -802,4 +813,19 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+/* Mobile-specific fixes */
+@media (max-width: 1024px) {
+  /* Prevent overscroll on mobile */
+  .mobile-no-overscroll {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix for mobile sheet interactions */
+  .mobile-sheet-content {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 }
