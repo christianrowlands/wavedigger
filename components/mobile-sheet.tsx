@@ -245,7 +245,17 @@ export default function MobileSheet({
           {/* Selected Marker - Only when expanded */}
           {selectedMarker && sheetState !== 'closed' && (
             <div className="mb-4 p-3 rounded-lg glass-primary">
-              <h4 className="text-sm font-semibold mb-2">Selected Location</h4>
+              <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                Selected Location
+                {selectedMarker.source === 'china' && (
+                  <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
+                    backgroundColor: '#EE1C25', 
+                    color: 'white' 
+                  }}>
+                    CN
+                  </span>
+                )}
+              </h4>
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
@@ -259,6 +269,12 @@ export default function MobileSheet({
                   <span style={{ color: 'var(--text-tertiary)' }}>Longitude</span>
                   <span className="font-mono">{selectedMarker.location.longitude.toFixed(6)}</span>
                 </div>
+                {selectedMarker.source === 'china' && (
+                  <div className="flex justify-between pt-1 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                    <span style={{ color: 'var(--text-tertiary)' }}>Source</span>
+                    <span>China Database</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -278,11 +294,23 @@ export default function MobileSheet({
                       id: `${result.bssid}-${Date.now()}`,
                       bssid: result.bssid,
                       position: [result.location.longitude, result.location.latitude],
-                      location: result.location
+                      location: result.location,
+                      source: result.source
                     });
                   }}
                 >
-                  <p className="font-mono font-medium">{result.bssid}</p>
+                  <p className="font-mono font-medium flex items-center gap-2">
+                    {result.bssid}
+                    {result.source === 'china' && (
+                      <span className="text-xs font-normal px-1 py-0.5 rounded" style={{ 
+                        backgroundColor: '#EE1C25', 
+                        color: 'white',
+                        fontSize: '0.65rem'
+                      }}>
+                        CN
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
                     {result.location.latitude.toFixed(4)}, {result.location.longitude.toFixed(4)}
                   </p>

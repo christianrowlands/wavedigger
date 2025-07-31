@@ -105,6 +105,8 @@ export default function MapView({
   // Create icons with current theme colors
   const wifiIcon = getMapIcon('location-pin', iconColors.gradientStart, iconColors.hoverGradientStart, false);
   const wifiIconHover = getMapIcon('location-pin', iconColors.gradientStart, iconColors.hoverGradientStart, true);
+  const wifiIconChina = getMapIcon('location-pin-china', iconColors.gradientStart, iconColors.hoverGradientStart, false);
+  const wifiIconChinaHover = getMapIcon('location-pin-china', iconColors.gradientStart, iconColors.hoverGradientStart, true);
 
   const layers = [
     new IconLayer({
@@ -112,12 +114,24 @@ export default function MapView({
       data: markers,
       pickable: true,
       getPosition: (d: MapMarker) => d.position,
-      getIcon: (d: MapMarker) => ({
-        url: hoveredMarker?.id === d.id ? wifiIconHover : wifiIcon,
-        width: 48,
-        height: 48,
-        anchorY: 38
-      }),
+      getIcon: (d: MapMarker) => {
+        const isChina = d.source === 'china';
+        const isHovered = hoveredMarker?.id === d.id;
+        let url = wifiIcon;
+        
+        if (isChina) {
+          url = isHovered ? wifiIconChinaHover : wifiIconChina;
+        } else {
+          url = isHovered ? wifiIconHover : wifiIcon;
+        }
+        
+        return {
+          url,
+          width: 48,
+          height: 48,
+          anchorY: 38
+        };
+      },
       getSize: 48,
       sizeScale: 1,
       sizeMinPixels: 32,
@@ -143,6 +157,14 @@ export default function MapView({
       >
         <div className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
           {hoveredMarker.bssid}
+          {hoveredMarker.source === 'china' && (
+            <span className="ml-2 text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
+              backgroundColor: '#EE1C25', 
+              color: 'white' 
+            }}>
+              CN
+            </span>
+          )}
         </div>
         <div className="space-y-0.5">
           <div className="text-xs flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
@@ -153,6 +175,11 @@ export default function MapView({
             <span style={{ color: 'var(--text-tertiary)' }}>Lng:</span>
             <span className="font-mono">{hoveredMarker.location.longitude.toFixed(6)}</span>
           </div>
+          {hoveredMarker.source === 'china' && (
+            <div className="text-xs pt-1" style={{ color: 'var(--text-tertiary)' }}>
+              Source: China Database
+            </div>
+          )}
         </div>
       </div>
     );

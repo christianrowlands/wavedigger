@@ -11,11 +11,8 @@ import {
   IWifiDevice 
 } from '@/lib/protobuf/schema';
 
-// Configuration
-const ENABLE_CHINA_API = process.env.ENABLE_CHINA_API === 'true';
-
 // Apple WLOC API implementation
-async function queryAppleWLOC(bssid: string, useChina: boolean = false): Promise<BSSIDSearchResult | null> {
+async function queryAppleWLOC(bssid: string, endpoint: 'global' | 'china'): Promise<BSSIDSearchResult | null> {
   try {
     
     // Create the request data
@@ -34,10 +31,10 @@ async function queryAppleWLOC(bssid: string, useChina: boolean = false): Promise
     const serializedRequest = serializeRequest(requestData);
     
     // Choose the appropriate endpoint
-    const endpoint = useChina ? WLOC_API_ENDPOINTS.china : WLOC_API_ENDPOINTS.default;
+    const endpointUrl = endpoint === 'china' ? WLOC_API_ENDPOINTS.china : WLOC_API_ENDPOINTS.default;
     
     // Make the request
-    const response = await fetch(endpoint, {
+    const response = await fetch(endpointUrl, {
       method: 'POST',
       headers: WLOC_HEADERS,
       body: serializedRequest
@@ -98,13 +95,14 @@ async function queryAppleWLOC(bssid: string, useChina: boolean = false): Promise
       return null;
     }
     
-    const result = {
+    const result: BSSIDSearchResult = {
       bssid: wifiDevice.bssid,
       location: {
         latitude: location.lat,
         longitude: location.lng
       },
-      accuracy: wifiDevice.location.horizontalAccuracy
+      accuracy: wifiDevice.location.horizontalAccuracy,
+      source: endpoint
     };
     
     
@@ -143,8 +141,14 @@ export async function POST(request: NextRequest) {
     }
     
     
-    // Query Apple WLOC API
-    const result = await queryAppleWLOC(validation.normalized, ENABLE_CHINA_API);
+    // Query Apple WLOC API - try global first, then China as fallback
+    let result = await queryAppleWLOC(validation.normalized, 'global');
+    
+    if (!result) {
+      // Try China endpoint as fallback
+      console.log(`BSSID ${validation.normalized} not found in global database, trying China endpoint...`);
+      result = await queryAppleWLOC(validation.normalized, 'china');
+    }
     
     if (!result) {
       return NextResponse.json(

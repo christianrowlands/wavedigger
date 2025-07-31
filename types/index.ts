@@ -9,6 +9,7 @@ export interface BSSIDSearchResult {
   location: Location;
   accuracy?: number;
   timestamp?: string;
+  source?: 'global' | 'china';
 }
 
 export interface SearchError {
@@ -29,4 +30,5 @@ export interface MapMarker {
   bssid: string;
   position: [number, number];
   location: Location;
+  source?: 'global' | 'china';
 }

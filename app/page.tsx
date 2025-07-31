@@ -30,6 +30,7 @@ export default function Home() {
       bssid: result.bssid,
       position: [result.location.longitude, result.location.latitude],
       location: result.location,
+      source: result.source
     };
     
     setMarkers(prev => [...prev, newMarker]);
@@ -43,6 +44,7 @@ export default function Home() {
       bssid: result.bssid,
       position: [result.location.longitude, result.location.latitude],
       location: result.location,
+      source: result.source
     }));
     
     setMarkers(prev => [...prev, ...newMarkers]);
@@ -127,8 +129,16 @@ export default function Home() {
             {/* Selected Marker Info */}
             {selectedMarker && (
               <div className="border-t pt-4 animate-slideIn" style={{ borderColor: 'var(--border-primary)' }}>
-                <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+                <h3 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
                   Selected Location
+                  {selectedMarker.source === 'china' && (
+                    <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
+                      backgroundColor: '#EE1C25', 
+                      color: 'white' 
+                    }}>
+                      CN
+                    </span>
+                  )}
                 </h3>
                 <div className="rounded-lg p-4 space-y-2 transition-all glass-primary">
                   <div className="flex items-center justify-between">
@@ -149,6 +159,14 @@ export default function Home() {
                       {selectedMarker.location.longitude.toFixed(6)}
                     </span>
                   </div>
+                  {selectedMarker.source === 'china' && (
+                    <div className="flex items-center justify-between pt-1 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                      <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Source</span>
+                      <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                        China Database
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -172,8 +190,16 @@ export default function Home() {
                         if (marker) setSelectedMarker(marker);
                       }}
                     >
-                      <p className="font-medium font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
+                      <p className="font-medium font-mono text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
                         {result.bssid}
+                        {result.source === 'china' && (
+                          <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
+                            backgroundColor: '#EE1C25', 
+                            color: 'white' 
+                          }}>
+                            CN
+                          </span>
+                        )}
                       </p>
                       <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--text-tertiary)' }}>
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

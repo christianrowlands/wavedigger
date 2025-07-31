@@ -50,6 +50,42 @@ export function createLocationPin(
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
+// Create a location pin with China indicator
+export function createLocationPinChina(
+  primaryColor: string,
+  size: number = 48
+): string {
+  const svg = `
+    <svg width="${size}" height="${size}" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="pin-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:1" />
+          <stop offset="100%" style="stop-color:${primaryColor};stop-opacity:0.8" />
+        </linearGradient>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.2"/>
+        </filter>
+      </defs>
+      
+      <!-- Location pin shape -->
+      <path d="M24 2 C15.163 2 8 9.163 8 18 C8 29 24 46 24 46 S40 29 40 18 C40 9.163 32.837 2 24 2 Z" 
+            fill="url(#pin-gradient)" 
+            filter="url(#shadow)"/>
+      
+      <!-- Simple center circle -->
+      <circle cx="24" cy="18" r="6" fill="white" opacity="0.9"/>
+      
+      <!-- China flag indicator -->
+      <g transform="translate(30, 3)">
+        <circle cx="8" cy="8" r="8" fill="#EE1C25" stroke="white" stroke-width="1"/>
+        <text x="8" y="12" text-anchor="middle" font-size="10" font-weight="bold" fill="white">CN</text>
+      </g>
+    </svg>
+  `;
+  
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
 // Modern router icon design
 export function createRouterIcon(
   primaryColor: string,
@@ -104,7 +140,7 @@ export function createRouterIcon(
 
 // Get icon based on preference and theme
 export function getMapIcon(
-  type: 'location-pin' | 'router' | 'wifi' | 'broadcast',
+  type: 'location-pin' | 'location-pin-china' | 'router' | 'wifi' | 'broadcast',
   primaryColor: string,
   hoverColor?: string,
   isHovered: boolean = false
@@ -114,6 +150,8 @@ export function getMapIcon(
   switch (type) {
     case 'location-pin':
       return createLocationPin(color);
+    case 'location-pin-china':
+      return createLocationPinChina(color);
     case 'router':
       return createRouterIcon(color);
     case 'wifi':
