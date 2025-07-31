@@ -18,7 +18,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          isModern ? "input-modern" : "flex h-10 w-full px-3 py-2 text-sm transition-all focus-ring disabled:cursor-not-allowed disabled:opacity-50",
+          isModern ? "input-modern" : "flex h-10 w-full px-2 sm:px-3 py-2 text-sm transition-all focus-ring disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
         style={isModern ? style : {

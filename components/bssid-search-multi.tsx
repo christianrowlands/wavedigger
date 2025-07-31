@@ -13,6 +13,7 @@ interface MultiBSSIDSearchProps {
   onSearchStart?: () => void;
   onSearchError?: (error: SearchError) => void;
   maxBSSIDs?: number;
+  mobileToggle?: React.ReactNode;
 }
 
 interface BSSIDInput {
@@ -26,7 +27,8 @@ export default function MultiBSSIDSearch({
   onSearchResults, 
   onSearchStart,
   onSearchError,
-  maxBSSIDs = 10
+  maxBSSIDs = 10,
+  mobileToggle
 }: MultiBSSIDSearchProps) {
   const [inputs, setInputs] = useState<BSSIDInput[]>([
     { id: '1', value: '', isValid: true }
@@ -204,6 +206,7 @@ export default function MultiBSSIDSearch({
       </div>
       
       <div className="flex gap-2">
+        {mobileToggle && <div className="lg:hidden">{mobileToggle}</div>}
         {inputs.length < maxBSSIDs && (
           <Button
             variant="outline"

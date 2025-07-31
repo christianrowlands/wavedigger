@@ -11,12 +11,14 @@ interface BSSIDSearchProps {
   onSearchResult: (result: BSSIDSearchResult) => void;
   onSearchStart?: () => void;
   onSearchError?: (error: SearchError) => void;
+  mobileToggle?: React.ReactNode;
 }
 
 export default function BSSIDSearch({ 
   onSearchResult, 
   onSearchStart,
-  onSearchError 
+  onSearchError,
+  mobileToggle 
 }: BSSIDSearchProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -114,22 +116,23 @@ export default function BSSIDSearch({
   };
 
   return (
-    <div className="w-full max-w-xl space-y-4">
-      <div className="flex gap-2">
+    <div className="w-full space-y-4">
+      <div className="flex gap-1 sm:gap-2">
+        {mobileToggle && <div className="lg:hidden">{mobileToggle}</div>}
         <Input
           type="text"
-          placeholder="Enter BSSID (e.g., AA:BB:CC:DD:EE:FF)"
+          placeholder="Enter BSSID"
           value={input}
           onChange={handleInputChange}
           onKeyPress={handleKeyPress}
           disabled={isLoading}
-          className={error ? 'border-red-500' : ''}
+          className={`flex-1 min-w-0 ${error ? 'border-red-500' : ''}`}
           variant="modern"
         />
         <button 
           onClick={handleSearch} 
           disabled={isLoading || !input.trim()}
-          className={`btn-primary flex items-center justify-center gap-2 px-3 sm:px-4 ${isLoading || !input.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`btn-primary flex items-center justify-center px-2 sm:px-3 flex-shrink-0 ${isLoading || !input.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
           style={{
             background: isLoading || !input.trim() ? 'var(--bg-tertiary)' : undefined,
             color: isLoading || !input.trim() ? 'var(--text-tertiary)' : undefined,
@@ -140,12 +143,12 @@ export default function BSSIDSearch({
           {isLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="hidden sm:inline">Searching</span>
+              <span className="hidden sm:inline ml-2">Searching</span>
             </>
           ) : (
             <>
               <Search className="h-4 w-4" />
-              <span className="hidden sm:inline">Search</span>
+              <span className="hidden sm:inline ml-2">Search</span>
             </>
           )}
         </button>
@@ -159,8 +162,8 @@ export default function BSSIDSearch({
       )}
       
       {recentSearches.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-sm text-gray-600">Recent searches:</p>
+        <div className="space-y-1">
+          <p className="text-xs text-gray-600">Recent:</p>
           <div className="flex flex-wrap gap-2">
             {recentSearches.map((bssid, index) => (
               <button

@@ -15,10 +15,10 @@ interface MobileSheetProps {
 type SheetState = 'closed' | 'peek' | 'full';
 
 // Sheet positions
-const SHEET_CLOSED_HEIGHT = 120;
+const SHEET_CLOSED_HEIGHT = 60;
 const SHEET_PEEK_HEIGHT = 350;
-const SHEET_MIN_HEIGHT = 100;
-const SHEET_TOP_OFFSET = 100; // Space to leave for search UI
+const SHEET_MIN_HEIGHT = 50;
+const SHEET_TOP_OFFSET = 80; // Space to leave for search UI
 
 export default function MobileSheet({ 
   selectedMarker, 
@@ -129,12 +129,12 @@ export default function MobileSheet({
         {/* Drag Handle */}
         <div 
           ref={dragHandleRef}
-          className="relative flex flex-col items-center py-3 cursor-grab active:cursor-grabbing select-none"
+          className="relative flex flex-col items-center py-2 cursor-grab active:cursor-grabbing select-none"
           onClick={toggleExpanded}
         >
           <div className="w-12 h-1.5 rounded-full" style={{ backgroundColor: 'var(--text-tertiary)' }} />
           {/* State indicator dots */}
-          <div className="flex gap-1 mt-2">
+          <div className="flex gap-1 mt-1">
             <div 
               className="w-1.5 h-1.5 rounded-full transition-all"
               style={{ 
@@ -162,21 +162,21 @@ export default function MobileSheet({
         {/* Content */}
         <div 
           ref={contentRef}
-          className="px-4 pb-4 overflow-y-auto" 
+          className={`px-4 overflow-y-auto ${sheetState === 'closed' ? 'pb-2' : 'pb-4'}`} 
           style={{ 
-            height: 'calc(100% - 48px)',
+            height: sheetState === 'closed' ? 'calc(100% - 30px)' : 'calc(100% - 48px)',
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch',
             pointerEvents: isDragging ? 'none' : 'auto'
           }}
         >
-          {/* Search Section */}
-          <div className="mb-4">
+          {/* Locations found text - always visible */}
+          <div className={`text-center ${sheetState === 'closed' ? 'py-0' : 'mb-4'}`}>
             {children}
           </div>
 
-          {/* Selected Marker - Always Visible */}
-          {selectedMarker && (
+          {/* Selected Marker - Only when expanded */}
+          {selectedMarker && sheetState !== 'closed' && (
             <div className="mb-4 p-3 rounded-lg glass-primary">
               <h4 className="text-sm font-semibold mb-2">Selected Location</h4>
               <div className="space-y-1 text-xs">

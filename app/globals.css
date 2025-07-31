@@ -664,11 +664,17 @@ html {
     rgba(249, 247, 255, 0.95));
   border: 2px solid rgba(147, 129, 255, 0.2);
   border-radius: var(--radius-lg);
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 0.5rem;
   transition: all var(--transition-base);
   box-shadow: 
     0 2px 8px 0 rgba(147, 129, 255, 0.08),
     inset 0 1px 2px 0 rgba(147, 129, 255, 0.05);
+}
+
+@media (min-width: 640px) {
+  .input-modern {
+    padding: 0.75rem 1rem;
+  }
 }
 
 .input-modern:hover {
@@ -830,18 +836,27 @@ html {
   }
 }
 
+/* Mobile-specific adjustments */
+@media (max-width: 640px) {
+  /* Compact button styles for mobile */
+  .btn-primary {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+}
+
 /* Ultra-small screen adjustments */
 @media (max-width: 400px) {
   /* Further reduce padding and font sizes */
   .btn-primary {
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem;
     font-size: 0.875rem;
   }
   
   /* Ensure buttons have minimum touch target */
   button {
-    min-height: 48px;
-    min-width: 48px;
+    min-height: 44px;
+    min-width: 44px;
   }
   
   /* Compact header adjustments */

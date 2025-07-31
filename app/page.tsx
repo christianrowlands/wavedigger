@@ -88,7 +88,7 @@ export default function Home() {
               <ThemeToggle />
               <button
                 onClick={handleClearAll}
-                className="px-2 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all hover:scale-105 flex items-center gap-2"
+                className="px-2 sm:px-4 py-2 text-sm font-medium rounded-lg transition-all hover:scale-105 flex items-center justify-center"
                 style={{
                   color: markers.length === 0 ? 'var(--text-tertiary)' : 'var(--color-error)',
                   background: markers.length === 0 ? 'transparent' : 'var(--color-error-light)',
@@ -101,7 +101,7 @@ export default function Home() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                <span className="hidden sm:inline">Clear All</span>
+                <span className="hidden sm:inline sm:ml-2">Clear All</span>
               </button>
             </div>
           </div>
@@ -200,8 +200,8 @@ export default function Home() {
           />
           
           {/* Mobile Search Bar - Floating on top of map */}
-          <div className="lg:hidden absolute top-4 left-4 right-4 z-30">
-            <div className="glass-card rounded-xl p-4 shadow-lg" style={{
+          <div className="lg:hidden absolute top-2 left-2 right-2 z-30">
+            <div className="glass-card rounded-xl p-2 shadow-lg" style={{
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border-primary)'
             }}>
