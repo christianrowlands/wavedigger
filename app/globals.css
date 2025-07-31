@@ -834,6 +834,14 @@ html {
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
   }
+  
+  /* Ensure drag handle doesn't conflict with browser gestures */
+  .drag-handle {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
 }
 
 /* Mobile-specific adjustments */

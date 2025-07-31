@@ -31,6 +31,9 @@ export default function MobileSheet({
   const [isDragging, setIsDragging] = useState(false);
   const [startY, setStartY] = useState(0);
   const [startHeight, setStartHeight] = useState(0);
+  const [dragStartTime, setDragStartTime] = useState(0);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [hasMoved, setHasMoved] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const dragHandleRef = useRef<HTMLDivElement>(null);
@@ -40,21 +43,31 @@ export default function MobileSheet({
     return window.innerHeight - SHEET_TOP_OFFSET;
   };
 
-  // Use pointer events for better compatibility
+  // Handle drag start - moved to drag handle element
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Only start drag from the drag handle
-    if (dragHandleRef.current && dragHandleRef.current.contains(e.target as Node)) {
-      setIsDragging(true);
-      setStartY(e.clientY);
-      setStartHeight(sheetHeight);
-      e.currentTarget.setPointerCapture(e.pointerId);
-    }
+    e.preventDefault(); // Prevent browser touch gestures
+    setIsDragging(true);
+    setStartY(e.clientY);
+    setDragStartX(e.clientX);
+    setStartHeight(sheetHeight);
+    setDragStartTime(Date.now());
+    setHasMoved(false);
+    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging) return;
     
+    e.preventDefault(); // Prevent browser touch gestures
+    
     const deltaY = startY - e.clientY;
+    const deltaX = Math.abs(e.clientX - dragStartX);
+    
+    // Mark as moved if the pointer has moved more than 5 pixels
+    if (!hasMoved && (Math.abs(deltaY) > 5 || deltaX > 5)) {
+      setHasMoved(true);
+    }
+    
     const maxHeight = getMaxHeight();
     const newHeight = Math.max(SHEET_MIN_HEIGHT, Math.min(maxHeight, startHeight + deltaY));
     setSheetHeight(newHeight);
@@ -63,28 +76,77 @@ export default function MobileSheet({
   const handlePointerUp = (e: React.PointerEvent) => {
     if (!isDragging) return;
     
+    e.preventDefault(); // Prevent browser touch gestures
+    
     setIsDragging(false);
     e.currentTarget.releasePointerCapture(e.pointerId);
     
-    // Snap to positions based on current height
+    // If didn't move much, treat as click
+    if (!hasMoved) {
+      toggleExpanded();
+      return;
+    }
+    
     const maxHeight = getMaxHeight();
     const currentHeight = sheetHeight;
+    const dragDistance = currentHeight - startHeight;
+    const dragDuration = Date.now() - dragStartTime;
+    const velocity = dragDuration > 0 ? dragDistance / dragDuration : 0;
     
-    // Determine which snap point we're closest to
-    const closedDist = Math.abs(currentHeight - SHEET_CLOSED_HEIGHT);
-    const peekDist = Math.abs(currentHeight - SHEET_PEEK_HEIGHT);
-    const fullDist = Math.abs(currentHeight - maxHeight);
+    // Threshold for triggering state change (20% of the distance between states)
+    const threshold = 0.2;
     
-    if (closedDist < peekDist && closedDist < fullDist) {
-      setSheetHeight(SHEET_CLOSED_HEIGHT);
-      setSheetState('closed');
-    } else if (peekDist < fullDist) {
-      setSheetHeight(SHEET_PEEK_HEIGHT);
-      setSheetState('peek');
-    } else {
-      setSheetHeight(maxHeight);
-      setSheetState('full');
+    // Determine target state based on current state, drag direction, and velocity
+    let targetState = sheetState;
+    let targetHeight = sheetHeight;
+    
+    if (sheetState === 'closed') {
+      const peekThreshold = (SHEET_PEEK_HEIGHT - SHEET_CLOSED_HEIGHT) * threshold;
+      if (dragDistance > peekThreshold || velocity > 0.5) {
+        targetState = 'peek';
+        targetHeight = SHEET_PEEK_HEIGHT;
+      } else {
+        targetHeight = SHEET_CLOSED_HEIGHT;
+      }
+    } else if (sheetState === 'peek') {
+      const upThreshold = (maxHeight - SHEET_PEEK_HEIGHT) * threshold;
+      const downThreshold = (SHEET_PEEK_HEIGHT - SHEET_CLOSED_HEIGHT) * threshold;
+      
+      if (dragDistance > upThreshold || velocity > 0.5) {
+        targetState = 'full';
+        targetHeight = maxHeight;
+      } else if (dragDistance < -downThreshold || velocity < -0.5) {
+        targetState = 'closed';
+        targetHeight = SHEET_CLOSED_HEIGHT;
+      } else {
+        targetHeight = SHEET_PEEK_HEIGHT;
+      }
+    } else if (sheetState === 'full') {
+      const peekThreshold = (maxHeight - SHEET_PEEK_HEIGHT) * threshold;
+      if (dragDistance < -peekThreshold || velocity < -0.5) {
+        // Determine if we should go to peek or closed based on drag distance
+        if (dragDistance < -(maxHeight - SHEET_CLOSED_HEIGHT) * 0.5) {
+          targetState = 'closed';
+          targetHeight = SHEET_CLOSED_HEIGHT;
+        } else {
+          targetState = 'peek';
+          targetHeight = SHEET_PEEK_HEIGHT;
+        }
+      } else {
+        targetHeight = maxHeight;
+      }
     }
+    
+    setSheetState(targetState);
+    setSheetHeight(targetHeight);
+  };
+
+  const handlePointerCancel = () => {
+    if (!isDragging) return;
+    
+    // Reset to previous state if drag is cancelled
+    setIsDragging(false);
+    setSheetHeight(startHeight);
   };
 
   const toggleExpanded = () => {
@@ -115,9 +177,6 @@ export default function MobileSheet({
         transform: 'translateY(0)',
         willChange: isDragging ? 'height' : 'auto'
       }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
     >
       <div 
         className="glass-card rounded-t-2xl shadow-2xl h-full overflow-hidden"
@@ -129,10 +188,18 @@ export default function MobileSheet({
         {/* Drag Handle */}
         <div 
           ref={dragHandleRef}
-          className="relative flex flex-col items-center py-2 cursor-grab active:cursor-grabbing select-none"
-          onClick={toggleExpanded}
+          className="drag-handle relative flex flex-col items-center py-3 cursor-grab active:cursor-grabbing select-none"
+          style={{ touchAction: 'none' }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerCancel}
         >
-          <div className="w-12 h-1.5 rounded-full" style={{ backgroundColor: 'var(--text-tertiary)' }} />
+          <div className="w-12 h-1.5 rounded-full" style={{ 
+            backgroundColor: isDragging ? 'var(--color-primary-500)' : 'var(--text-tertiary)',
+            transform: isDragging ? 'scaleX(1.5)' : 'scaleX(1)',
+            transition: 'all 0.2s'
+          }} />
           {/* State indicator dots */}
           <div className="flex gap-1 mt-1">
             <div 
@@ -164,7 +231,7 @@ export default function MobileSheet({
           ref={contentRef}
           className={`px-4 overflow-y-auto ${sheetState === 'closed' ? 'pb-2' : 'pb-4'}`} 
           style={{ 
-            height: sheetState === 'closed' ? 'calc(100% - 30px)' : 'calc(100% - 48px)',
+            height: sheetState === 'closed' ? 'calc(100% - 40px)' : 'calc(100% - 56px)',
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch',
             pointerEvents: isDragging ? 'none' : 'auto'
