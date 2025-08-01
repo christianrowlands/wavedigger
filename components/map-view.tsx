@@ -130,9 +130,17 @@ export default function MapView({
     }
   }, []);
   
-  // Apply Standard style configuration when style changes
+  // Track if initial load has completed
+  const [hasInitialLoadCompleted, setHasInitialLoadCompleted] = useState(false);
+  
+  // Apply Standard style configuration when style changes (not on initial load)
   useEffect(() => {
-    console.log('[MapView] Style config effect:', { 
+    if (!hasInitialLoadCompleted) {
+      setHasInitialLoadCompleted(true);
+      return; // Skip the first run to let onLoad handle initial config
+    }
+    
+    console.log('[MapView] Style change detected:', { 
       currentStyle, 
       hasMapRef: !!mapRef.current,
       isMapReady 
@@ -140,27 +148,32 @@ export default function MapView({
     
     if (mapRef.current && currentStyle === 'standard' && isMapReady) {
       const map = mapRef.current.getMap();
-      console.log('[MapView] Got map for style config:', map);
       
       if (map) {
-        // Wait for style to load
+        // Function to apply config with error handling
         const applyConfig = () => {
-          map.setConfigProperty('basemap', 'lightPreset', isDarkMode ? 'dusk' : 'day');
-          map.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
-          map.setConfigProperty('basemap', 'showTransitLabels', true);
-          map.setConfigProperty('basemap', 'showPlaceLabels', true);
-          map.setConfigProperty('basemap', 'showRoadLabels', true);
+          try {
+            console.log('[MapView] Applying Standard config after style change');
+            map.setConfigProperty('basemap', 'lightPreset', isDarkMode ? 'dusk' : 'day');
+            map.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
+            map.setConfigProperty('basemap', 'showTransitLabels', true);
+            map.setConfigProperty('basemap', 'showPlaceLabels', true);
+            map.setConfigProperty('basemap', 'showRoadLabels', true);
+            console.log('[MapView] Config applied successfully after style change');
+          } catch (error) {
+            console.error('[MapView] Error applying config after style change:', error);
+          }
         };
         
-        // Apply immediately if style is loaded, otherwise wait for style.load event
-        if (map.isStyleLoaded()) {
-          applyConfig();
-        } else {
-          map.once('style.load', applyConfig);
-        }
+        // Wait for the new style to load
+        map.once('style.load', () => {
+          console.log('[MapView] Style loaded after change');
+          // Small delay to ensure style is fully ready
+          setTimeout(applyConfig, 100);
+        });
       }
     }
-  }, [currentStyle, isDarkMode, isMapReady]);
+  }, [currentStyle, isDarkMode, isMapReady, hasInitialLoadCompleted]);
   
   // Close style menu when clicking outside
   useEffect(() => {
@@ -414,25 +427,43 @@ export default function MapView({
               if (mapRef.current) {
                 const map = mapRef.current.getMap();
                 
-                // Workaround for react-map-gl bug with Standard style
-                // Apply configuration after style loads
-                const applyStandardConfig = () => {
-                  if (currentStyle === 'standard') {
+                // Function to apply Standard style configuration
+                const applyStandardConfig = (retryCount = 0) => {
+                  if (currentStyle !== 'standard') return;
+                  
+                  console.log('[MapView] Attempting to apply Standard config, retry:', retryCount);
+                  
+                  try {
                     map.setConfigProperty('basemap', 'lightPreset', isDarkMode ? 'dusk' : 'day');
                     map.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
                     map.setConfigProperty('basemap', 'showTransitLabels', true);
                     map.setConfigProperty('basemap', 'showPlaceLabels', true);
                     map.setConfigProperty('basemap', 'showRoadLabels', true);
+                    console.log('[MapView] Standard config applied successfully');
+                  } catch (error) {
+                    console.error('[MapView] Error applying Standard config:', error);
+                    
+                    // Retry up to 3 times with increasing delays
+                    if (retryCount < 3) {
+                      const delay = (retryCount + 1) * 500; // 500ms, 1000ms, 1500ms
+                      console.log(`[MapView] Retrying in ${delay}ms...`);
+                      setTimeout(() => applyStandardConfig(retryCount + 1), delay);
+                    }
                   }
                 };
                 
-                // Apply on initial load
-                map.on('style.load', applyStandardConfig);
+                // Use 'style.load' event to ensure basemap import is ready
+                map.once('style.load', () => {
+                  console.log('[MapView] Style loaded on initial load');
+                  // Small delay to ensure style is fully ready (consistent with style switch)
+                  setTimeout(() => applyStandardConfig(), 100);
+                });
                 
-                // Also apply immediately in case style is already loaded
-                if (map.isStyleLoaded()) {
+                // Also set up a fallback timeout (increased for safety)
+                setTimeout(() => {
+                  console.log('[MapView] Fallback timeout - applying config');
                   applyStandardConfig();
-                }
+                }, 2000);
               }
             }}
             fog={{
