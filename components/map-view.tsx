@@ -9,6 +9,8 @@ import type { PickingInfo, FlyToInterpolator as FlyToInterpolatorType } from '@d
 import type { ViewState, MapMarker } from '@/types';
 import { getMapIcon } from './map-icons';
 import { formatBSSIDForDisplay } from '@/lib/bssid-utils';
+import { useAnalytics } from '@/hooks/use-analytics';
+import { AnalyticsEvents } from '@/lib/analytics';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapViewProps {
@@ -92,6 +94,8 @@ export default function MapView({
   const deckRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
+  
+  const { trackMapStyleChange, logEvent } = useAnalytics();
 
   // Check for dark mode and get theme colors
   useEffect(() => {
@@ -234,12 +238,15 @@ export default function MapView({
   const handleClick = useCallback((info: PickingInfo) => {
     if (info.object) {
       // Clicked on a marker
-      onMarkerClick?.(info.object as MapMarker);
+      const marker = info.object as MapMarker;
+      logEvent(AnalyticsEvents.MARKER_CLICK, { marker_source: marker.source });
+      onMarkerClick?.(marker);
     } else if (info.coordinate) {
       // Clicked on empty map area
+      logEvent(AnalyticsEvents.MAP_CLICK, { has_location_tab_active: !!onMapClick });
       onMapClick?.(info.coordinate[0], info.coordinate[1]);
     }
-  }, [onMarkerClick, onMapClick]);
+  }, [onMarkerClick, onMapClick, logEvent]);
 
 
   // Separate regular markers from selected marker
@@ -525,7 +532,11 @@ export default function MapView({
                   <button
                     key={key}
                     onClick={() => {
-                      setCurrentStyle(key as keyof typeof MAP_STYLES);
+                      const newStyle = key as keyof typeof MAP_STYLES;
+                      if (newStyle !== currentStyle) {
+                        trackMapStyleChange(currentStyle, newStyle);
+                      }
+                      setCurrentStyle(newStyle);
                       setShowStyleMenu(false);
                       localStorage.setItem('mapStyle', key);
                     }}

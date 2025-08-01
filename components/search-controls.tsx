@@ -6,6 +6,7 @@ import MultiBSSIDSearch from '@/components/bssid-search-multi';
 import LocationSearch from '@/components/location-search';
 import { ToggleLeft, ToggleRight, Search, MapPin } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useAnalytics } from '@/hooks/use-analytics';
 import type { BSSIDSearchResult } from '@/types';
 
 interface SearchControlsProps {
@@ -41,6 +42,8 @@ export default function SearchControls({
   isLocationSearching = false,
   clickedLocation
 }: SearchControlsProps) {
+  const { trackTabSwitch } = useAnalytics();
+  
   // For mobile compact mode, we'll pass the toggle button to the search component
   const toggleButton = (
     <button
@@ -97,7 +100,13 @@ export default function SearchControls({
       <Tabs 
         defaultValue="bssid"
         value={activeTab} 
-        onValueChange={(value) => onTabChange?.(value as 'bssid' | 'location')}
+        onValueChange={(value) => {
+          const newTab = value as 'bssid' | 'location';
+          if (newTab !== activeTab) {
+            trackTabSwitch(activeTab, newTab);
+          }
+          onTabChange?.(newTab);
+        }}
         className="w-full"
       >
         <TabsList className="grid w-full grid-cols-2 mb-4">

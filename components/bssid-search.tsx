@@ -5,6 +5,8 @@ import { Search, Loader2, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { validateAndNormalizeBSSID } from '@/lib/bssid-utils';
+import { useAnalytics } from '@/hooks/use-analytics';
+import { AnalyticsEvents } from '@/lib/analytics';
 import type { BSSIDSearchResult, SearchError } from '@/types';
 
 interface BSSIDSearchProps {
@@ -34,6 +36,8 @@ export default function BSSIDSearch({
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [includeSurrounding, setIncludeSurrounding] = useState(false);
   const [lastSearchCount, setLastSearchCount] = useState<number | null>(null);
+  
+  const { trackBSSIDSearch, trackSearchError, logEvent } = useAnalytics();
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -95,6 +99,7 @@ export default function BSSIDSearch({
         const error = data.error as SearchError;
         setError(error.message);
         onSearchError?.(error);
+        trackSearchError(error.message, 'bssid');
         return;
       }
       
@@ -111,6 +116,13 @@ export default function BSSIDSearch({
       if (data.results && Array.isArray(data.results)) {
         // Multiple results (surrounding APs)
         setLastSearchCount(data.results.length);
+        
+        // Track search with surrounding APs
+        trackBSSIDSearch(
+          'with_surrounding',
+          data.results.length,
+          bssidOverride ? 'url' : 'manual'
+        );
         
         // If this was a manual search with surrounding APs, add the searched BSSID to history
         if (includeSurrounding && onManualSearchResult) {
@@ -134,6 +146,14 @@ export default function BSSIDSearch({
       } else if (data.result) {
         // Single result - this is a manual search
         setLastSearchCount(null);
+        
+        // Track single BSSID search
+        trackBSSIDSearch(
+          'single',
+          1,
+          bssidOverride ? 'url' : 'manual'
+        );
+        
         if (onManualSearchResult && !includeSurrounding) {
           // Use manual handler for single BSSID searches
           onManualSearchResult(data.result);
@@ -149,6 +169,7 @@ export default function BSSIDSearch({
         type: 'NETWORK_ERROR',
         message: 'Failed to connect to server'
       });
+      trackSearchError('Network error', 'bssid');
     } finally {
       setIsLoading(false);
     }
@@ -160,7 +181,9 @@ export default function BSSIDSearch({
     }
   };
 
-  const handleRecentSearch = (bssid: string) => {
+  const handleRecentSearch = (bssid: string, position: number) => {
+    // Track recent search click
+    logEvent(AnalyticsEvents.SEARCH_HISTORY_CLICK, { position_in_list: position });
     setInput(bssid);
     handleSearch(bssid);
   };
@@ -210,7 +233,11 @@ export default function BSSIDSearch({
           <input
             type="checkbox"
             checked={includeSurrounding}
-            onChange={(e) => setIncludeSurrounding(e.target.checked)}
+            onChange={(e) => {
+              const newValue = e.target.checked;
+              setIncludeSurrounding(newValue);
+              logEvent(AnalyticsEvents.TOGGLE_SURROUNDING_APS, { enabled: newValue });
+            }}
             className="w-4 h-4 rounded border-2 transition-colors"
             style={{
               borderColor: 'var(--border-primary)',
@@ -259,7 +286,7 @@ export default function BSSIDSearch({
             {recentSearches.map((bssid, index) => (
               <button
                 key={bssid}
-                onClick={() => handleRecentSearch(bssid)}
+                onClick={() => handleRecentSearch(bssid, index)}
                 className={`text-xs px-3 py-1 rounded-full transition-all hover:scale-105 hover:-translate-y-0.5 hover:shadow-md ${
                   index % 3 === 0 
                     ? 'gradient-card-1' 

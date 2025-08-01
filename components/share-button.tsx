@@ -3,19 +3,23 @@
 import React, { useCallback } from 'react';
 import { Share2 } from 'lucide-react';
 import { useToast } from './toast-provider';
+import { useAnalytics } from '@/hooks/use-analytics';
 
 interface ShareButtonProps {
   url: string;
   className?: string;
   variant?: 'icon' | 'button';
+  analyticsSource?: 'selected_marker' | 'search_history';
 }
 
 export default function ShareButton({ 
   url, 
   className = '',
-  variant = 'icon'
+  variant = 'icon',
+  analyticsSource
 }: ShareButtonProps) {
   const { showToast } = useToast();
+  const { trackShareLocation } = useAnalytics();
   
   // Fallback method using execCommand
   const fallbackCopyToClipboard = useCallback((text: string) => {
@@ -55,11 +59,19 @@ export default function ShareButton({
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(url);
         showToast('Link copied to clipboard!', 'success');
+        // Track share action if source is provided
+        if (analyticsSource) {
+          trackShareLocation(analyticsSource);
+        }
       } else {
         // Use fallback method
         const success = fallbackCopyToClipboard(url);
         if (success) {
           showToast('Link copied to clipboard!', 'success');
+          // Track share action if source is provided
+          if (analyticsSource) {
+            trackShareLocation(analyticsSource);
+          }
         } else {
           showToast('Failed to copy link. Please copy manually.', 'error');
         }
@@ -70,11 +82,15 @@ export default function ShareButton({
       const success = fallbackCopyToClipboard(url);
       if (success) {
         showToast('Link copied to clipboard!', 'success');
+        // Track share action if source is provided
+        if (analyticsSource) {
+          trackShareLocation(analyticsSource);
+        }
       } else {
         showToast('Failed to copy link. Please copy manually.', 'error');
       }
     }
-  }, [url, showToast, fallbackCopyToClipboard]);
+  }, [url, showToast, fallbackCopyToClipboard, analyticsSource, trackShareLocation]);
   
   if (variant === 'icon') {
     return (

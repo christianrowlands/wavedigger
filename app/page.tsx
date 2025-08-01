@@ -10,6 +10,8 @@ import SearchControls from '@/components/search-controls';
 import ShareButton from '@/components/share-button';
 import CopyButton from '@/components/copy-button';
 import { useShareUrl } from '@/hooks/use-share-url';
+import { useAnalytics } from '@/hooks/use-analytics';
+import { AnalyticsEvents } from '@/lib/analytics';
 import { formatBSSIDForURL, parseBSSIDFromURL, formatBSSIDForDisplay } from '@/lib/bssid-utils';
 import type { BSSIDSearchResult, MapMarker } from '@/types';
 
@@ -39,6 +41,7 @@ function HomeContent() {
   const router = useRouter();
   const hasProcessedUrl = useRef(false);
   const { generateShareUrl } = useShareUrl();
+  const { trackClearAllMarkers, logEvent } = useAnalytics();
 
   // Update URL with current search state
   const updateUrl = useCallback((bssid?: string) => {
@@ -138,6 +141,9 @@ function HomeContent() {
   }, [activeTab]);
 
   const handleClearAll = () => {
+    // Track the clear all action before clearing
+    trackClearAllMarkers(markers.length);
+    
     setMarkers([]);
     setSelectedMarker(null);
     setSearchHistory([]);
@@ -180,6 +186,12 @@ function HomeContent() {
           const data = await response.json();
           
           if (response.ok && data.result) {
+            // Track URL BSSID load
+            logEvent(AnalyticsEvents.URL_BSSID_LOAD, {
+              success: true,
+              has_lat_lng: !!(latParam && lngParam)
+            });
+            
             // For URL-loaded searches, fly to the location
             handleSearchResult(data.result, true);
             
@@ -192,6 +204,12 @@ function HomeContent() {
                 setFlyToLocation({ latitude: lat, longitude: lng });
               }
             }
+          } else {
+            // Track failed URL BSSID load
+            logEvent(AnalyticsEvents.URL_BSSID_LOAD, {
+              success: false,
+              has_lat_lng: !!(latParam && lngParam)
+            });
           }
         } catch (error) {
           console.error('Error loading shared BSSID:', error);
@@ -203,7 +221,7 @@ function HomeContent() {
       
       searchBssid();
     }
-  }, [searchParams, handleSearchResult]);
+  }, [searchParams, handleSearchResult, logEvent]);
 
   return (
     <div className="h-full flex flex-col gradient-mesh-vibrant mobile-no-overscroll" style={{ background: 'var(--bg-primary)', position: 'fixed', inset: 0 }}>
@@ -297,27 +315,35 @@ function HomeContent() {
                       mode: isMultiMode ? 'multi' : 'single'
                     })}
                     variant="icon"
+                    analyticsSource="selected_marker"
                   />
                 </div>
                 <div className="rounded-lg p-4 space-y-2 transition-all glass-primary">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
                         {formatBSSIDForDisplay(selectedMarker.bssid)}
                       </span>
-                      <CopyButton text={formatBSSIDForDisplay(selectedMarker.bssid)} label="BSSID" />
+                      <CopyButton 
+                        text={formatBSSIDForDisplay(selectedMarker.bssid)} 
+                        label="BSSID"
+                        analyticsType="bssid"
+                        analyticsSource="selected_marker"
+                      />
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Location</span>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
                         {selectedMarker.location.latitude.toFixed(6)}, {selectedMarker.location.longitude.toFixed(6)}
                       </span>
                       <CopyButton 
                         text={`${selectedMarker.location.latitude.toFixed(6)}, ${selectedMarker.location.longitude.toFixed(6)}`} 
-                        label="Location" 
+                        label="Location"
+                        analyticsType="location"
+                        analyticsSource="selected_marker"
                       />
                     </div>
                   </div>
@@ -397,6 +423,7 @@ function HomeContent() {
                             })}
                             variant="icon"
                             className="!p-1"
+                            analyticsSource="search_history"
                           />
                         </div>
                       </div>

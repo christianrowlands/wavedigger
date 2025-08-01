@@ -270,19 +270,26 @@ export default function MobileSheet({
                   })}
                   variant="icon"
                   className="!p-1"
+                  analyticsSource="selected_marker"
                 />
               </div>
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <span className="font-mono">{formatBSSIDForDisplay(selectedMarker.bssid)}</span>
-                    <CopyButton text={formatBSSIDForDisplay(selectedMarker.bssid)} label="BSSID" size="sm" />
+                    <CopyButton 
+                      text={formatBSSIDForDisplay(selectedMarker.bssid)} 
+                      label="BSSID" 
+                      size="sm"
+                      analyticsType="bssid"
+                      analyticsSource="mobile_sheet"
+                    />
                   </div>
                 </div>
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--text-tertiary)' }}>Location</span>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2">
                     <span className="font-mono text-xs">
                       {selectedMarker.location.latitude.toFixed(6)}, {selectedMarker.location.longitude.toFixed(6)}
                     </span>
@@ -290,6 +297,8 @@ export default function MobileSheet({
                       text={`${selectedMarker.location.latitude.toFixed(6)}, ${selectedMarker.location.longitude.toFixed(6)}`} 
                       label="Location" 
                       size="sm"
+                      analyticsType="location"
+                      analyticsSource="mobile_sheet"
                     />
                   </div>
                 </div>

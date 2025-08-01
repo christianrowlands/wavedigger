@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { MapPin, Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAnalytics } from '@/hooks/use-analytics';
 import type { BSSIDSearchResult } from '@/types';
 
 interface LocationSearchProps {
@@ -28,6 +29,8 @@ export default function LocationSearch({
     maxDistance: number;
   } | null>(null);
   const [searchProgress, setSearchProgress] = useState<string | null>(null);
+  
+  const { trackLocationSearch, trackSearchError } = useAnalytics();
 
   // Handle location search when clickedLocation changes
   React.useEffect(() => {
@@ -59,7 +62,9 @@ export default function LocationSearch({
       const tileData = await tileResponse.json();
       
       if (!tileResponse.ok || !tileData.closestBSSID) {
-        setError(tileData.message || 'No access points found in this area. Try a different location.');
+        const errorMessage = tileData.message || 'No access points found in this area. Try a different location.';
+        setError(errorMessage);
+        trackSearchError(errorMessage, 'location');
         onSearchEnd?.();
         return;
       }
@@ -97,6 +102,9 @@ export default function LocationSearch({
         setSearchProgress(null);
         onSearchResults(proximityData.results);
         console.log(`Found ${proximityData.count} access points within 5000m (${proximityData.totalFound || proximityData.count} total) after ${proximityData.iterations || 1} iterations`);
+        
+        // Track successful location search
+        trackLocationSearch(proximityData.count, latitude, longitude);
       } else {
         setError('Unable to find nearby access points. Please try a different location.');
       }
@@ -106,6 +114,7 @@ export default function LocationSearch({
     } catch (err) {
       console.error('Location search error:', err);
       setError('Network error. Please try again.');
+      trackSearchError('Network error', 'location');
       setSearchProgress(null);
       onSearchEnd?.();
     }
