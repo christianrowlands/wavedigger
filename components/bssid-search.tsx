@@ -242,9 +242,6 @@ export default function BSSIDSearch({
             </svg>
             <span className="font-medium">Found {lastSearchCount} access points</span>
           </div>
-          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            All within range of the searched BSSID
-          </span>
         </div>
       )}
       
