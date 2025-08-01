@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
 import { Map as MapGL } from 'react-map-gl';
 import { IconLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { FlyToInterpolator } from '@deck.gl/core';
 import type { PickingInfo } from '@deck.gl/core';
 import type { ViewState, MapMarker } from '@/types';
 import { getMapIcon } from './map-icons';
@@ -15,6 +16,7 @@ interface MapViewProps {
   selectedMarker?: MapMarker | null;
   mapboxToken?: string;
   flyToLocation?: { longitude: number; latitude: number } | null;
+  onFlyToComplete?: () => void;
   onMapClick?: (longitude: number, latitude: number) => void;
   clickedLocation?: { latitude: number; longitude: number } | null;
 }
@@ -24,7 +26,8 @@ const INITIAL_VIEW_STATE: ViewState = {
   latitude: 39.8283,
   zoom: 4,
   pitch: 0,
-  bearing: 0
+  bearing: 0,
+  transitionDuration: 0 // Prevent zoom bounce in React 18
 };
 
 const MAP_STYLES = {
@@ -62,6 +65,7 @@ export default function MapView({
   selectedMarker,
   mapboxToken,
   flyToLocation,
+  onFlyToComplete,
   onMapClick,
   clickedLocation 
 }: MapViewProps) {
@@ -70,6 +74,7 @@ export default function MapView({
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentStyle, setCurrentStyle] = useState<keyof typeof MAP_STYLES>('standard');
   const [showStyleMenu, setShowStyleMenu] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
   const [iconColors, setIconColors] = useState({
     gradientStart: '#9381FF',
     gradientEnd: '#C7A3FF',
@@ -78,6 +83,8 @@ export default function MapView({
   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const deckRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
 
   // Check for dark mode and get theme colors
   useEffect(() => {
@@ -116,6 +123,38 @@ export default function MapView({
     }
   }, []);
   
+  // Apply Standard style configuration when style changes
+  useEffect(() => {
+    console.log('[MapView] Style config effect:', { 
+      currentStyle, 
+      hasMapRef: !!mapRef.current,
+      isMapReady 
+    });
+    
+    if (mapRef.current && currentStyle === 'standard' && isMapReady) {
+      const map = mapRef.current.getMap();
+      console.log('[MapView] Got map for style config:', map);
+      
+      if (map) {
+        // Wait for style to load
+        const applyConfig = () => {
+          map.setConfigProperty('basemap', 'lightPreset', isDarkMode ? 'dusk' : 'day');
+          map.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
+          map.setConfigProperty('basemap', 'showTransitLabels', true);
+          map.setConfigProperty('basemap', 'showPlaceLabels', true);
+          map.setConfigProperty('basemap', 'showRoadLabels', true);
+        };
+        
+        // Apply immediately if style is loaded, otherwise wait for style.load event
+        if (map.isStyleLoaded()) {
+          applyConfig();
+        } else {
+          map.once('style.load', applyConfig);
+        }
+      }
+    }
+  }, [currentStyle, isDarkMode, isMapReady]);
+  
   // Close style menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -131,30 +170,36 @@ export default function MapView({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showStyleMenu]);
 
-  // Zoom to marker when new marker is added
-  useEffect(() => {
-    if (markers.length > 0) {
-      const lastMarker = markers[markers.length - 1];
-      setViewState(v => ({
-        ...v,
-        longitude: lastMarker.position[0],
-        latitude: lastMarker.position[1],
-        zoom: 15
-      }));
-    }
-  }, [markers]);
-
+  // Handle view state changes
+  const handleViewStateChange = useCallback(({ viewState: newViewState }: { viewState: ViewState }) => {
+    // Always maintain transitionDuration: 0 for user interactions to prevent bounce
+    setViewState({
+      ...newViewState,
+      transitionDuration: 0
+    });
+  }, []);
+  
   // Fly to location when requested
   useEffect(() => {
-    if (flyToLocation) {
-      setViewState(v => ({
-        ...v,
+    if (flyToLocation && isMapReady) {
+      console.log('[MapView] Flying to location:', flyToLocation);
+      
+      // Use FlyToInterpolator for smooth animation
+      setViewState({
+        ...viewState,
         longitude: flyToLocation.longitude,
         latitude: flyToLocation.latitude,
-        zoom: 15
-      }));
+        zoom: 15,
+        transitionDuration: 2000,
+        transitionInterpolator: new FlyToInterpolator()
+      });
+      
+      // Clear flyToLocation after starting animation
+      setTimeout(() => {
+        onFlyToComplete?.();
+      }, 100);
     }
-  }, [flyToLocation]);
+  }, [flyToLocation, isMapReady]); // Intentionally not including viewState to avoid loops
 
   const handleHover = useCallback((info: PickingInfo) => {
     if (info.object) {
@@ -178,6 +223,45 @@ export default function MapView({
   // Separate regular markers from selected marker
   const regularMarkers = markers.filter(m => m.id !== selectedMarker?.id);
   const selectedMarkerData = selectedMarker ? [selectedMarker] : [];
+  
+  // Memoize icon mapping to prevent recreation on every render
+  const iconMapping = useMemo(() => {
+    const mapping: Record<string, { url: string; width: number; height: number; anchorY: number }> = {};
+    
+    // Pre-generate all icon variations
+    (['location-pin', 'location-pin-china'] as const).forEach(type => {
+      // Regular icon
+      mapping[`${type}-regular`] = {
+        url: getMapIcon(type, iconColors.gradientStart, iconColors.hoverGradientStart, false, undefined, false, 48),
+        width: 48,
+        height: 48,
+        anchorY: 38
+      };
+      // Hovered icon
+      mapping[`${type}-hover`] = {
+        url: getMapIcon(type, iconColors.gradientStart, iconColors.hoverGradientStart, true, undefined, false, 48),
+        width: 48,
+        height: 48,
+        anchorY: 38
+      };
+      // Selected icon
+      mapping[`${type}-selected`] = {
+        url: getMapIcon(type, iconColors.hoverGradientStart, iconColors.hoverGradientEnd, false, undefined, true, 72),
+        width: 72,
+        height: 72,
+        anchorY: 66
+      };
+      // Selected + hovered icon
+      mapping[`${type}-selected-hover`] = {
+        url: getMapIcon(type, iconColors.hoverGradientStart, iconColors.hoverGradientEnd, true, undefined, true, 72),
+        width: 72,
+        height: 72,
+        anchorY: 66
+      };
+    });
+    
+    return mapping;
+  }, [iconColors]);
 
   const layers = [
     // Click marker layer
@@ -210,32 +294,19 @@ export default function MapView({
       getIcon: (d: MapMarker) => {
         const isChina = d.source === 'china';
         const isHovered = hoveredMarker?.id === d.id;
-        
-        // Create icon
         const iconType = isChina ? 'location-pin-china' : 'location-pin';
-        const url = getMapIcon(
-          iconType,
-          iconColors.gradientStart,
-          iconColors.hoverGradientStart,
-          isHovered,
-          undefined,
-          false,
-          48
-        );
-        
-        return {
-          url,
-          width: 48,
-          height: 48,
-          anchorY: 38
-        };
+        const iconKey = `${iconType}-${isHovered ? 'hover' : 'regular'}`;
+        return iconMapping[iconKey];
       },
       getSize: 48,
       sizeScale: 1,
       sizeMinPixels: 32,
       sizeMaxPixels: 64,
       onHover: handleHover,
-      onClick: handleClick
+      onClick: handleClick,
+      updateTriggers: {
+        getIcon: [hoveredMarker?.id, iconMapping]
+      }
     }),
     
     // Selected marker layer (renders on top)
@@ -247,32 +318,19 @@ export default function MapView({
       getIcon: (d: MapMarker) => {
         const isChina = d.source === 'china';
         const isHovered = hoveredMarker?.id === d.id;
-        
-        // Create selected icon
         const iconType = isChina ? 'location-pin-china' : 'location-pin';
-        const url = getMapIcon(
-          iconType,
-          iconColors.hoverGradientStart,
-          iconColors.hoverGradientEnd,
-          isHovered,
-          undefined,
-          true,
-          72
-        );
-        
-        return {
-          url,
-          width: 72,
-          height: 72,
-          anchorY: 66
-        };
+        const iconKey = `${iconType}-selected${isHovered ? '-hover' : ''}`;
+        return iconMapping[iconKey];
       },
       getSize: 72,
       sizeScale: 1,
       sizeMinPixels: 48,
       sizeMaxPixels: 96,
       onHover: handleHover,
-      onClick: handleClick
+      onClick: handleClick,
+      updateTriggers: {
+        getIcon: [hoveredMarker?.id, iconMapping]
+      }
     })
   ].filter(Boolean);
 
@@ -325,7 +383,7 @@ export default function MapView({
       <DeckGL
         ref={deckRef}
         viewState={viewState}
-        onViewStateChange={({ viewState }) => setViewState(viewState as ViewState)}
+        onViewStateChange={handleViewStateChange}
         controller={true}
         layers={layers}
         style={{ width: '100%', height: '100%' }}
@@ -333,9 +391,41 @@ export default function MapView({
       >
         {mapboxToken ? (
           <MapGL
+            ref={(ref) => {
+              console.log('[MapView] Map ref callback called with:', ref);
+              mapRef.current = ref;
+            }}
             mapStyle={MAP_STYLES[currentStyle].url}
             mapboxAccessToken={mapboxToken}
             style={{ width: '100%', height: '100%' }}
+            onLoad={() => {
+              console.log('[MapView] Map onLoad fired');
+              setIsMapReady(true);
+              
+              if (mapRef.current) {
+                const map = mapRef.current.getMap();
+                
+                // Workaround for react-map-gl bug with Standard style
+                // Apply configuration after style loads
+                const applyStandardConfig = () => {
+                  if (currentStyle === 'standard') {
+                    map.setConfigProperty('basemap', 'lightPreset', isDarkMode ? 'dusk' : 'day');
+                    map.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
+                    map.setConfigProperty('basemap', 'showTransitLabels', true);
+                    map.setConfigProperty('basemap', 'showPlaceLabels', true);
+                    map.setConfigProperty('basemap', 'showRoadLabels', true);
+                  }
+                };
+                
+                // Apply on initial load
+                map.on('style.load', applyStandardConfig);
+                
+                // Also apply immediately in case style is already loaded
+                if (map.isStyleLoaded()) {
+                  applyStandardConfig();
+                }
+              }
+            }}
             fog={{
               'horizon-blend': 0.02,
               'color': isDarkMode ? '#242424' : '#ffffff',
@@ -349,21 +439,6 @@ export default function MapView({
               intensity: isDarkMode ? 0.2 : 0.4
             }}
             terrain={currentStyle === 'standard' || currentStyle === 'outdoors' ? { source: 'mapbox-dem', exaggeration: 1.5 } : undefined}
-            // @ts-expect-error - Mapbox GL JS v3 has updated types not yet in react-map-gl
-            configureMapStyle={currentStyle === 'standard' ? (style) => {
-              const config = {
-                ...style,
-                lightPreset: isDarkMode ? 'dusk' : 'day',
-                basemap: {
-                  lightPreset: isDarkMode ? 'dusk' : 'day',
-                  showPointOfInterestLabels: true,
-                  showTransitLabels: true,
-                  showPlaceLabels: true,
-                  showRoadLabels: true
-                }
-              };
-              return config;
-            } : undefined}
           />
         ) : (
           <MapGL

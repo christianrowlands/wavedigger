@@ -61,7 +61,7 @@ function HomeContent() {
     router.push(queryString ? `/?${queryString}` : '/', { scroll: false });
   }, [router, isMultiMode, searchParams]);
 
-  const handleSearchResult = useCallback((result: BSSIDSearchResult) => {
+  const handleSearchResult = useCallback((result: BSSIDSearchResult, shouldFlyTo: boolean = false) => {
     const newMarker: MapMarker = {
       id: `${result.bssid}-${Date.now()}`,
       bssid: result.bssid,
@@ -74,6 +74,19 @@ function HomeContent() {
     setMarkers(prev => [...prev, newMarker]);
     setSelectedMarker(newMarker);
     
+    // Fly to location if requested (for single searches)
+    if (shouldFlyTo) {
+      console.log('[Page] Setting flyToLocation for search result:', {
+        bssid: result.bssid,
+        longitude: result.location.longitude,
+        latitude: result.location.latitude
+      });
+      setFlyToLocation({
+        longitude: result.location.longitude,
+        latitude: result.location.latitude
+      });
+    }
+    
     // Update URL with the searched BSSID (only if not loading from URL)
     if (!isLoadingFromUrl) {
       updateUrl(result.bssid);
@@ -83,8 +96,8 @@ function HomeContent() {
   const handleManualSearchResult = useCallback((result: BSSIDSearchResult) => {
     // Add to search history for manual searches
     setSearchHistory(prev => [result, ...prev.slice(0, 9)]);
-    // Call the regular handler
-    handleSearchResult(result);
+    // Call the regular handler with flyTo enabled for manual searches
+    handleSearchResult(result, true);
   }, [handleSearchResult]);
 
   const handleMultiSearchResults = useCallback((results: BSSIDSearchResult[]) => {
@@ -166,13 +179,15 @@ function HomeContent() {
           const data = await response.json();
           
           if (response.ok && data.result) {
-            handleSearchResult(data.result);
+            // For URL-loaded searches, fly to the location
+            handleSearchResult(data.result, true);
             
-            // If lat/lng provided, fly to that location
+            // If specific lat/lng provided, use those instead
             if (latParam && lngParam) {
               const lat = parseFloat(latParam);
               const lng = parseFloat(lngParam);
               if (!isNaN(lat) && !isNaN(lng)) {
+                console.log('[Page] Setting flyToLocation from URL params:', { lat, lng });
                 setFlyToLocation({ latitude: lat, longitude: lng });
               }
             }
@@ -245,7 +260,7 @@ function HomeContent() {
             <SearchControls
               isMultiMode={isMultiMode}
               onToggleMode={() => setIsMultiMode(!isMultiMode)}
-              onSearchResult={handleSearchResult}
+              onSearchResult={(result) => handleSearchResult(result, false)}
               onManualSearchResult={handleManualSearchResult}
               onSearchResults={handleMultiSearchResults}
               isLoadingFromUrl={isLoadingFromUrl}
@@ -332,6 +347,11 @@ function HomeContent() {
                         const marker = markers.find(m => m.bssid === result.bssid);
                         if (marker) {
                           setSelectedMarker(marker);
+                          console.log('[Page] Setting flyToLocation from search history click:', {
+                            bssid: result.bssid,
+                            longitude: marker.position[0],
+                            latitude: marker.position[1]
+                          });
                           setFlyToLocation({
                             longitude: marker.position[0],
                             latitude: marker.position[1]
@@ -392,6 +412,7 @@ function HomeContent() {
             selectedMarker={selectedMarker}
             mapboxToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
             flyToLocation={flyToLocation}
+            onFlyToComplete={() => setFlyToLocation(null)}
             onMapClick={handleMapClick}
             clickedLocation={clickedLocation}
           />
@@ -477,7 +498,7 @@ function HomeContent() {
               <SearchControls
                 isMultiMode={isMultiMode}
                 onToggleMode={() => setIsMultiMode(!isMultiMode)}
-                onSearchResult={handleSearchResult}
+                onSearchResult={(result) => handleSearchResult(result, false)}
                 onManualSearchResult={handleManualSearchResult}
                 onSearchResults={handleMultiSearchResults}
                 compact={true}
@@ -501,6 +522,11 @@ function HomeContent() {
           searchHistory={searchHistory}
           onMarkerSelect={(marker) => {
             setSelectedMarker(marker);
+            console.log('[Page] Setting flyToLocation from mobile sheet:', {
+              bssid: marker.bssid,
+              longitude: marker.position[0],
+              latitude: marker.position[1]
+            });
             setFlyToLocation({
               longitude: marker.position[0],
               latitude: marker.position[1]
