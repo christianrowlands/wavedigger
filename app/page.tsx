@@ -89,9 +89,6 @@ function HomeContent() {
     // Update URL with the searched BSSID (only if not loading from URL)
     if (!isLoadingFromUrl) {
       updateUrl(result.bssid);
-    } else {
-      // Add to search history for URL-loaded searches so mobile sheet has data
-      setSearchHistory(prev => [result, ...prev.slice(0, 9)]);
     }
   }, [updateUrl, isLoadingFromUrl]);
   
@@ -192,6 +189,9 @@ function HomeContent() {
             
             // For URL-loaded searches, fly to the location
             handleSearchResult(data.result, true);
+            
+            // Add to search history for URL-loaded searches
+            setSearchHistory(prev => [data.result, ...prev.slice(0, 9)]);
             
             // If specific lat/lng provided, use those instead
             if (latParam && lngParam) {
