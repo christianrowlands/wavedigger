@@ -84,17 +84,3 @@ Note: Not all BSSIDs are in Apple's database. Newly deployed or private access p
 
 - **Cell Tower Tracking**: Find cell tower locations
 - **Export Results**: Download search results as JSON/CSV
-
-## Deployment
-
-WaveDigger can be deployed for free on Vercel. See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
-
-Quick start:
-1. Push to GitHub
-2. Import to Vercel
-3. Add custom domain
-4. Deploy!
-
-## License
-
-This project is for educational and demonstration purposes.
