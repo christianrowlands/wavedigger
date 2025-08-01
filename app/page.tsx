@@ -89,6 +89,9 @@ function HomeContent() {
     // Update URL with the searched BSSID (only if not loading from URL)
     if (!isLoadingFromUrl) {
       updateUrl(result.bssid);
+    } else {
+      // Add to search history for URL-loaded searches so mobile sheet has data
+      setSearchHistory(prev => [result, ...prev.slice(0, 9)]);
     }
   }, [updateUrl, isLoadingFromUrl]);
   
