@@ -23,10 +23,29 @@ export function iconToDataUrl(
 // Create a simple location pin marker
 export function createLocationPin(
   primaryColor: string,
-  size: number = 48
+  size: number = 48,
+  fillColor?: string,
+  isSelected: boolean = false
 ): string {
-  const svg = `
-    <svg width="${size}" height="${size}" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  const viewBox = isSelected ? "0 0 72 84" : "0 0 48 48";
+  const scale = isSelected ? 1.5 : 1;
+  const cx = isSelected ? 36 : 24;
+  const cy = isSelected ? 27 : 18;
+  
+  const svg = isSelected ? `
+    <svg width="${size}" height="${size}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Location pin shape (no shadow for selected) -->
+      <path d="M${cx} ${3*scale} C${cx - 13.163*scale} ${3*scale} ${cx - 16*scale} ${12.163*scale} ${cx - 16*scale} ${cy} C${cx - 16*scale} ${cy + 16.5*scale} ${cx} ${cx + 28*scale} ${cx} ${cx + 28*scale} S${cx + 16*scale} ${cy + 16.5*scale} ${cx + 16*scale} ${cy} C${cx + 16*scale} ${12.163*scale} ${cx + 13.163*scale} ${3*scale} ${cx} ${3*scale} Z" 
+            fill="${fillColor || primaryColor}" />
+      
+      <!-- Solid white center circle -->
+      <circle cx="${cx}" cy="${cy}" r="${9*scale}" fill="white" />
+      
+      <!-- Inner colored circle for visibility -->
+      <circle cx="${cx}" cy="${cy}" r="${4*scale}" fill="${primaryColor}" />
+    </svg>
+  ` : `
+    <svg width="${size}" height="${size}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="pin-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:1" />
@@ -39,7 +58,7 @@ export function createLocationPin(
       
       <!-- Location pin shape -->
       <path d="M24 2 C15.163 2 8 9.163 8 18 C8 29 24 46 24 46 S40 29 40 18 C40 9.163 32.837 2 24 2 Z" 
-            fill="url(#pin-gradient)" 
+            fill="${fillColor || 'url(#pin-gradient)'}" 
             filter="url(#shadow)"/>
       
       <!-- Simple center circle -->
@@ -53,10 +72,38 @@ export function createLocationPin(
 // Create a location pin with China indicator
 export function createLocationPinChina(
   primaryColor: string,
-  size: number = 48
+  size: number = 48,
+  fillColor?: string,
+  isSelected: boolean = false
 ): string {
-  const svg = `
-    <svg width="${size}" height="${size}" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  const viewBox = isSelected ? "0 0 72 84" : "0 0 48 48";
+  const scale = isSelected ? 1.5 : 1;
+  const cx = isSelected ? 36 : 24;
+  const cy = isSelected ? 27 : 18;
+  const flagX = isSelected ? 45 : 30;
+  const flagY = isSelected ? 4.5 : 3;
+  const flagSize = isSelected ? 12 : 8;
+  
+  const svg = isSelected ? `
+    <svg width="${size}" height="${size}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Location pin shape (no shadow for selected) -->
+      <path d="M${cx} ${3*scale} C${cx - 13.163*scale} ${3*scale} ${cx - 16*scale} ${12.163*scale} ${cx - 16*scale} ${cy} C${cx - 16*scale} ${cy + 16.5*scale} ${cx} ${cx + 28*scale} ${cx} ${cx + 28*scale} S${cx + 16*scale} ${cy + 16.5*scale} ${cx + 16*scale} ${cy} C${cx + 16*scale} ${12.163*scale} ${cx + 13.163*scale} ${3*scale} ${cx} ${3*scale} Z" 
+            fill="${fillColor || primaryColor}" />
+      
+      <!-- Solid white center circle -->
+      <circle cx="${cx}" cy="${cy}" r="${9*scale}" fill="white" />
+      
+      <!-- Inner colored circle for visibility -->
+      <circle cx="${cx}" cy="${cy}" r="${4*scale}" fill="${primaryColor}" />
+      
+      <!-- China flag indicator -->
+      <g transform="translate(${flagX}, ${flagY})">
+        <circle cx="${flagSize}" cy="${flagSize}" r="${flagSize}" fill="#EE1C25" stroke="white" stroke-width="1.5"/>
+        <text x="${flagSize}" y="${flagSize + 6}" text-anchor="middle" font-size="${isSelected ? 15 : 10}" font-weight="bold" fill="white">CN</text>
+      </g>
+    </svg>
+  ` : `
+    <svg width="${size}" height="${size}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="pin-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:1" />
@@ -69,7 +116,7 @@ export function createLocationPinChina(
       
       <!-- Location pin shape -->
       <path d="M24 2 C15.163 2 8 9.163 8 18 C8 29 24 46 24 46 S40 29 40 18 C40 9.163 32.837 2 24 2 Z" 
-            fill="url(#pin-gradient)" 
+            fill="${fillColor || 'url(#pin-gradient)'}" 
             filter="url(#shadow)"/>
       
       <!-- Simple center circle -->
@@ -143,22 +190,25 @@ export function getMapIcon(
   type: 'location-pin' | 'location-pin-china' | 'router' | 'wifi' | 'broadcast',
   primaryColor: string,
   hoverColor?: string,
-  isHovered: boolean = false
+  isHovered: boolean = false,
+  fillColor?: string,
+  isSelected: boolean = false,
+  size: number = 48
 ): string {
   const color = isHovered && hoverColor ? hoverColor : primaryColor;
   
   switch (type) {
     case 'location-pin':
-      return createLocationPin(color);
+      return createLocationPin(color, size, fillColor, isSelected);
     case 'location-pin-china':
-      return createLocationPinChina(color);
+      return createLocationPinChina(color, size, fillColor, isSelected);
     case 'router':
-      return createRouterIcon(color);
+      return createRouterIcon(color, size);
     case 'wifi':
-      return iconToDataUrl(MdWifiTethering, color);
+      return iconToDataUrl(MdWifiTethering, color, size);
     case 'broadcast':
-      return iconToDataUrl(FaBroadcastTower, color);
+      return iconToDataUrl(FaBroadcastTower, color, size);
     default:
-      return createLocationPin(color);
+      return createLocationPin(color, size, fillColor, isSelected);
   }
 }

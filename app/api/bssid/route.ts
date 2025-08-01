@@ -12,13 +12,13 @@ import {
 } from '@/lib/protobuf/schema';
 
 // Apple WLOC API implementation
-async function queryAppleWLOC(bssid: string, endpoint: 'global' | 'china'): Promise<BSSIDSearchResult | null> {
+async function queryAppleWLOC(bssid: string, endpoint: 'global' | 'china', returnAll: boolean = false): Promise<BSSIDSearchResult | BSSIDSearchResult[] | null> {
   try {
     
     // Create the request data
     const requestData: IAppleWLoc = {
       wifiDevices: [{ bssid }],
-      numWifiResults: -1, // Use -1 to get results (matching Go implementation)
+      numWifiResults: returnAll ? 0 : -1, // Use 0 to get all results, -1 for single result
       numCellResults: 0,
       deviceType: {
         operatingSystem: 'iPhone OS17.5/21F79',
@@ -67,9 +67,35 @@ async function queryAppleWLOC(bssid: string, endpoint: 'global' | 'china'): Prom
     const parsedResponse = parseResponse(responseBuffer);
     
     
-    // Find the requested BSSID in the response
     // protobufjs returns camelCase field names
     const devices = parsedResponse.wifiDevices || [];
+    
+    // If returnAll is true, return all wifi devices
+    if (returnAll && devices.length > 0) {
+      const results: BSSIDSearchResult[] = [];
+      
+      for (const device of devices) {
+        if (!device.bssid || !device.location) continue;
+        
+        const location = parseLocation(device.location);
+        if (!location) continue;
+        
+        results.push({
+          bssid: device.bssid,
+          location: {
+            latitude: location.lat,
+            longitude: location.lng
+          },
+          accuracy: device.location.horizontalAccuracy,
+          source: endpoint
+        });
+      }
+      
+      console.log(`Found ${results.length} APs near ${bssid}`);
+      return results.length > 0 ? results : null;
+    }
+    
+    // Original behavior: return only the matching BSSID
     // Normalize both BSSIDs for comparison (handles format differences like "aa:5:aa:bb:bb:62" vs "AA:05:AA:BB:BB:62")
     const normalizedSearchBSSID = normalizeBSSIDForComparison(bssid);
     const wifiDevice = devices.find(
@@ -121,7 +147,7 @@ async function queryAppleWLOC(bssid: string, endpoint: 'global' | 'china'): Prom
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { bssid } = body;
+    const { bssid, returnAll = false } = body;
     
     if (!bssid) {
       return NextResponse.json(
@@ -142,12 +168,12 @@ export async function POST(request: NextRequest) {
     
     
     // Query Apple WLOC API - try global first, then China as fallback
-    let result = await queryAppleWLOC(validation.normalized, 'global');
+    let result = await queryAppleWLOC(validation.normalized, 'global', returnAll);
     
     if (!result) {
       // Try China endpoint as fallback
       console.log(`BSSID ${validation.normalized} not found in global database, trying China endpoint...`);
-      result = await queryAppleWLOC(validation.normalized, 'china');
+      result = await queryAppleWLOC(validation.normalized, 'china', returnAll);
     }
     
     if (!result) {
@@ -157,7 +183,12 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    return NextResponse.json({ result });
+    // Return results based on returnAll flag
+    if (returnAll && Array.isArray(result)) {
+      return NextResponse.json({ results: result });
+    } else {
+      return NextResponse.json({ result });
+    }
     
   } catch (error) {
     console.error('BSSID search error:', error);

@@ -13,7 +13,7 @@ export interface BSSIDSearchResult {
 }
 
 export interface SearchError {
-  type: 'NOT_FOUND' | 'INVALID_BSSID' | 'API_ERROR' | 'NETWORK_ERROR';
+  type: 'NOT_FOUND' | 'INVALID_BSSID' | 'API_ERROR' | 'NETWORK_ERROR' | 'INVALID_LOCATION' | 'INVALID_REQUEST';
   message: string;
 }
 
@@ -31,4 +31,5 @@ export interface MapMarker {
   position: [number, number];
   location: Location;
   source?: 'global' | 'china';
+  accuracy?: number;
 }

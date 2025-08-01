@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import DeckGL from '@deck.gl/react';
 import { Map as MapGL } from 'react-map-gl';
-import { IconLayer } from '@deck.gl/layers';
+import { IconLayer, ScatterplotLayer } from '@deck.gl/layers';
 import type { PickingInfo } from '@deck.gl/core';
 import type { ViewState, MapMarker } from '@/types';
 import { getMapIcon } from './map-icons';
@@ -12,9 +12,11 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 interface MapViewProps {
   markers: MapMarker[];
   onMarkerClick?: (marker: MapMarker) => void;
-  onMarkerHover?: (marker: MapMarker | null) => void;
+  selectedMarker?: MapMarker | null;
   mapboxToken?: string;
   flyToLocation?: { longitude: number; latitude: number } | null;
+  onMapClick?: (longitude: number, latitude: number) => void;
+  clickedLocation?: { latitude: number; longitude: number } | null;
 }
 
 const INITIAL_VIEW_STATE: ViewState = {
@@ -30,9 +32,11 @@ const INITIAL_VIEW_STATE: ViewState = {
 export default function MapView({ 
   markers, 
   onMarkerClick, 
-  onMarkerHover,
+  selectedMarker,
   mapboxToken,
-  flyToLocation 
+  flyToLocation,
+  onMapClick,
+  clickedLocation 
 }: MapViewProps) {
   const [viewState, setViewState] = useState<ViewState>(INITIAL_VIEW_STATE);
   const [hoveredMarker, setHoveredMarker] = useState<MapMarker | null>(null);
@@ -103,41 +107,69 @@ export default function MapView({
   const handleHover = useCallback((info: PickingInfo) => {
     if (info.object) {
       setHoveredMarker(info.object as MapMarker);
-      onMarkerHover?.(info.object as MapMarker);
     } else {
       setHoveredMarker(null);
-      onMarkerHover?.(null);
     }
-  }, [onMarkerHover]);
+  }, []);
 
   const handleClick = useCallback((info: PickingInfo) => {
     if (info.object) {
+      // Clicked on a marker
       onMarkerClick?.(info.object as MapMarker);
+    } else if (info.coordinate) {
+      // Clicked on empty map area
+      onMapClick?.(info.coordinate[0], info.coordinate[1]);
     }
-  }, [onMarkerClick]);
+  }, [onMarkerClick, onMapClick]);
 
-  // Create icons with current theme colors
-  const wifiIcon = getMapIcon('location-pin', iconColors.gradientStart, iconColors.hoverGradientStart, false);
-  const wifiIconHover = getMapIcon('location-pin', iconColors.gradientStart, iconColors.hoverGradientStart, true);
-  const wifiIconChina = getMapIcon('location-pin-china', iconColors.gradientStart, iconColors.hoverGradientStart, false);
-  const wifiIconChinaHover = getMapIcon('location-pin-china', iconColors.gradientStart, iconColors.hoverGradientStart, true);
+
+  // Separate regular markers from selected marker
+  const regularMarkers = markers.filter(m => m.id !== selectedMarker?.id);
+  const selectedMarkerData = selectedMarker ? [selectedMarker] : [];
 
   const layers = [
+    // Click marker layer
+    clickedLocation && new ScatterplotLayer({
+      id: 'click-marker',
+      data: [{
+        position: [clickedLocation.longitude, clickedLocation.latitude],
+        size: 100
+      }],
+      pickable: false,
+      opacity: 0.8,
+      stroked: true,
+      filled: true,
+      radiusScale: 1,
+      radiusMinPixels: 10,
+      radiusMaxPixels: 30,
+      lineWidthMinPixels: 2,
+      getPosition: (d: { position: [number, number] }) => d.position,
+      getRadius: (d: { size: number }) => d.size,
+      getFillColor: [59, 130, 246, 100], // Blue with transparency
+      getLineColor: [59, 130, 246, 255], // Solid blue border
+    }),
+    
+    // Regular AP markers
     new IconLayer({
       id: 'bssid-markers',
-      data: markers,
+      data: regularMarkers,
       pickable: true,
       getPosition: (d: MapMarker) => d.position,
       getIcon: (d: MapMarker) => {
         const isChina = d.source === 'china';
         const isHovered = hoveredMarker?.id === d.id;
-        let url = wifiIcon;
         
-        if (isChina) {
-          url = isHovered ? wifiIconChinaHover : wifiIconChina;
-        } else {
-          url = isHovered ? wifiIconHover : wifiIcon;
-        }
+        // Create icon
+        const iconType = isChina ? 'location-pin-china' : 'location-pin';
+        const url = getMapIcon(
+          iconType,
+          iconColors.gradientStart,
+          iconColors.hoverGradientStart,
+          isHovered,
+          undefined,
+          false,
+          48
+        );
         
         return {
           url,
@@ -152,8 +184,45 @@ export default function MapView({
       sizeMaxPixels: 64,
       onHover: handleHover,
       onClick: handleClick
+    }),
+    
+    // Selected marker layer (renders on top)
+    selectedMarkerData.length > 0 && new IconLayer({
+      id: 'selected-marker',
+      data: selectedMarkerData,
+      pickable: true,
+      getPosition: (d: MapMarker) => d.position,
+      getIcon: (d: MapMarker) => {
+        const isChina = d.source === 'china';
+        const isHovered = hoveredMarker?.id === d.id;
+        
+        // Create selected icon
+        const iconType = isChina ? 'location-pin-china' : 'location-pin';
+        const url = getMapIcon(
+          iconType,
+          iconColors.hoverGradientStart,
+          iconColors.hoverGradientEnd,
+          isHovered,
+          undefined,
+          true,
+          72
+        );
+        
+        return {
+          url,
+          width: 72,
+          height: 72,
+          anchorY: 66
+        };
+      },
+      getSize: 72,
+      sizeScale: 1,
+      sizeMinPixels: 48,
+      sizeMaxPixels: 96,
+      onHover: handleHover,
+      onClick: handleClick
     })
-  ];
+  ].filter(Boolean);
 
   const renderTooltip = () => {
     if (!hoveredMarker) return null;
@@ -208,6 +277,7 @@ export default function MapView({
         controller={true}
         layers={layers}
         style={{ width: '100%', height: '100%' }}
+        onClick={handleClick}
       >
         {mapboxToken ? (
           <MapGL

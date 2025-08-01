@@ -9,6 +9,7 @@ import type { BSSIDSearchResult, SearchError } from '@/types';
 
 interface BSSIDSearchProps {
   onSearchResult: (result: BSSIDSearchResult) => void;
+  onSearchResults?: (results: BSSIDSearchResult[]) => void;
   onSearchStart?: () => void;
   onSearchError?: (error: SearchError) => void;
   mobileToggle?: React.ReactNode;
@@ -18,6 +19,7 @@ interface BSSIDSearchProps {
 
 export default function BSSIDSearch({ 
   onSearchResult, 
+  onSearchResults,
   onSearchStart,
   onSearchError,
   mobileToggle,
@@ -28,6 +30,8 @@ export default function BSSIDSearch({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [includeSurrounding, setIncludeSurrounding] = useState(false);
+  const [lastSearchCount, setLastSearchCount] = useState<number | null>(null);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -77,7 +81,10 @@ export default function BSSIDSearch({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ bssid: validation.normalized }),
+        body: JSON.stringify({ 
+          bssid: validation.normalized,
+          returnAll: includeSurrounding 
+        }),
       });
       
       const data = await response.json();
@@ -97,7 +104,24 @@ export default function BSSIDSearch({
       
       // Clear input after successful search
       setInput('');
-      onSearchResult(data.result);
+      
+      // Handle response based on whether we got single or multiple results
+      if (data.results && Array.isArray(data.results)) {
+        // Multiple results
+        setLastSearchCount(data.results.length);
+        if (onSearchResults) {
+          onSearchResults(data.results);
+        } else {
+          // Fallback: call onSearchResult for each
+          data.results.forEach((result: BSSIDSearchResult) => {
+            onSearchResult(result);
+          });
+        }
+      } else if (data.result) {
+        // Single result
+        setLastSearchCount(null);
+        onSearchResult(data.result);
+      }
       
     } catch (err) {
       console.error('Search error:', err);
@@ -160,6 +184,50 @@ export default function BSSIDSearch({
           )}
         </button>
       </div>
+      
+      {/* Include Surrounding Toggle */}
+      <div className="flex items-center gap-3 px-1">
+        <label className="flex items-center gap-2 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={includeSurrounding}
+            onChange={(e) => setIncludeSurrounding(e.target.checked)}
+            className="w-4 h-4 rounded border-2 transition-colors"
+            style={{
+              borderColor: 'var(--border-primary)',
+              accentColor: 'var(--color-primary-500)'
+            }}
+          />
+          <span className="text-sm select-none transition-colors group-hover:text-primary-600" 
+                style={{ color: 'var(--text-secondary)' }}>
+            Include surrounding access points
+          </span>
+        </label>
+        {includeSurrounding && (
+          <span className="text-xs px-2 py-0.5 rounded-full animate-fadeIn"
+                style={{ 
+                  backgroundColor: 'var(--color-primary-100)', 
+                  color: 'var(--color-primary-700)' 
+                }}>
+            Returns all APs near target
+          </span>
+        )}
+      </div>
+      
+      {/* Show result count when multiple APs found */}
+      {lastSearchCount !== null && lastSearchCount > 1 && (
+        <div className="flex items-center gap-2 px-1 animate-fadeIn">
+          <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-success)' }}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="font-medium">Found {lastSearchCount} access points</span>
+          </div>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            All within range of the searched BSSID
+          </span>
+        </div>
+      )}
       
       {error && (
         <Alert variant="destructive">

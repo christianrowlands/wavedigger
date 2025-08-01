@@ -30,6 +30,9 @@ function HomeContent() {
   const [flyToLocation, setFlyToLocation] = useState<{ longitude: number; latitude: number } | null>(null);
   const [isLoadingFromUrl, setIsLoadingFromUrl] = useState(false);
   const [urlBssid, setUrlBssid] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'bssid' | 'location'>('bssid');
+  const [clickedLocation, setClickedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isLocationSearching, setIsLocationSearching] = useState(false);
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -64,7 +67,8 @@ function HomeContent() {
       bssid: result.bssid,
       position: [result.location.longitude, result.location.latitude],
       location: result.location,
-      source: result.source
+      source: result.source,
+      accuracy: result.accuracy
     };
     
     setMarkers(prev => [...prev, newMarker]);
@@ -78,12 +82,13 @@ function HomeContent() {
   }, [updateUrl, isLoadingFromUrl]);
 
   const handleMultiSearchResults = useCallback((results: BSSIDSearchResult[]) => {
-    const newMarkers: MapMarker[] = results.map(result => ({
-      id: `${result.bssid}-${Date.now()}`,
+    const newMarkers: MapMarker[] = results.map((result, index) => ({
+      id: `${result.bssid}-${Date.now()}-${index}`,
       bssid: result.bssid,
       position: [result.location.longitude, result.location.latitude],
       location: result.location,
-      source: result.source
+      source: result.source,
+      accuracy: result.accuracy
     }));
     
     setMarkers(prev => [...prev, ...newMarkers]);
@@ -93,11 +98,24 @@ function HomeContent() {
     if (newMarkers.length > 0) {
       setSelectedMarker(newMarkers[0]);
     }
-  }, []);
+    
+    // If this was from a location search, stop the searching state
+    if (isLocationSearching) {
+      setIsLocationSearching(false);
+      setClickedLocation(null);
+    }
+  }, [isLocationSearching]);
 
   const handleMarkerClick = useCallback((marker: MapMarker) => {
     setSelectedMarker(marker);
   }, []);
+
+  const handleMapClick = useCallback((longitude: number, latitude: number) => {
+    // Only handle map clicks when location search tab is active
+    if (activeTab === 'location') {
+      setClickedLocation({ latitude, longitude });
+    }
+  }, [activeTab]);
 
   const handleClearAll = () => {
     setMarkers([]);
@@ -225,6 +243,12 @@ function HomeContent() {
               onSearchResults={handleMultiSearchResults}
               isLoadingFromUrl={isLoadingFromUrl}
               urlBssid={urlBssid}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onLocationSearchStart={() => setIsLocationSearching(true)}
+              onLocationSearchEnd={() => setIsLocationSearching(false)}
+              isLocationSearching={isLocationSearching}
+              clickedLocation={clickedLocation}
             />
 
             {/* Selected Marker Info */}
@@ -358,10 +382,48 @@ function HomeContent() {
           <MapView
             markers={markers}
             onMarkerClick={handleMarkerClick}
-            onMarkerHover={setSelectedMarker}
+            selectedMarker={selectedMarker}
             mapboxToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
             flyToLocation={flyToLocation}
+            onMapClick={handleMapClick}
+            clickedLocation={clickedLocation}
           />
+          
+          {/* Location search mode indicator */}
+          {activeTab === 'location' && !isLocationSearching && !clickedLocation && (
+            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none animate-fadeIn">
+              <div className="glass-card rounded-lg px-4 py-2 flex items-center gap-2" style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-primary)',
+                boxShadow: 'var(--shadow-lg)'
+              }}>
+                <svg className="w-5 h-5 animate-pulse" style={{ color: 'var(--color-primary-500)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                </svg>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  Click anywhere on the map to search
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {/* Location search loading indicator */}
+          {isLocationSearching && (
+            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none animate-fadeIn">
+              <div className="glass-card rounded-lg px-4 py-2 flex items-center gap-2" style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-primary)',
+                boxShadow: 'var(--shadow-lg)'
+              }}>
+                <svg className="w-5 h-5 animate-spin" style={{ color: 'var(--color-primary-500)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  Searching for access points...
+                </span>
+              </div>
+            </div>
+          )}
           
           {/* Loading overlay for URL-based searches */}
           {isLoadingFromUrl && (
@@ -413,9 +475,16 @@ function HomeContent() {
                 compact={true}
                 isLoadingFromUrl={isLoadingFromUrl}
                 urlBssid={urlBssid}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                onLocationSearchStart={() => setIsLocationSearching(true)}
+                onLocationSearchEnd={() => setIsLocationSearching(false)}
+                isLocationSearching={isLocationSearching}
+                clickedLocation={clickedLocation}
               />
             </div>
           </div>
+          
         </div>
 
         {/* Mobile Bottom Sheet */}

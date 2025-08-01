@@ -72,6 +72,32 @@ message Location {
   optional int64 baro_calibration_indication = 30;
   optional int64 processing_metadata = 31;
 }
+
+// WifiTile message for tile-based API
+message WifiTile {
+  int64 unknown1 = 1;
+  repeated Region region = 3;
+}
+
+message Region {
+  repeated Device devices = 2;
+}
+
+message Device {
+  UnknownPairs unknown = 4;
+  int64 bssid = 5;
+  TileLocation entry = 6;
+}
+
+message UnknownPairs {
+  int64 unknown1 = 1;
+  int64 unknown2 = 2;
+}
+
+message TileLocation {
+  sfixed32 lat = 1;
+  sfixed32 long = 2;
+}
 `;
 
 // Parse the schema
@@ -83,6 +109,10 @@ export const WifiDevice = root.lookupType('WifiDevice');
 export const Location = root.lookupType('Location');
 export const DeviceType = root.lookupType('DeviceType');
 export const CellTower = root.lookupType('CellTower');
+export const WifiTile = root.lookupType('WifiTile');
+export const Region = root.lookupType('Region');
+export const Device = root.lookupType('Device');
+export const TileLocation = root.lookupType('TileLocation');
 
 // TypeScript interfaces for the messages
 export interface ILocation {
@@ -124,6 +154,30 @@ export interface IAppleWLoc {
   deviceType?: IDeviceType;
 }
 
+// WifiTile interfaces
+export interface ITileLocation {
+  lat: number;
+  long: number;
+}
+
+export interface IDevice {
+  unknown?: {
+    unknown1?: number;
+    unknown2?: number;
+  };
+  bssid: number;  // int64 - needs decoding to MAC address
+  entry: ITileLocation;
+}
+
+export interface IRegion {
+  devices?: IDevice[];
+}
+
+export interface IWifiTile {
+  unknown1?: number;
+  region?: IRegion[];
+}
+
 // Coordinate conversion utilities
 export function coordFromInt(n: number, pow: number = -8): number {
   return n * Math.pow(10, pow);
@@ -162,8 +216,8 @@ export function serializeRequest(wlocData: IAppleWLoc): Buffer {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const protoData: any = {
     wifiDevices: [],           // camelCase, not wifi_devices
-    numWifiResults: -1,        // Use -1 to get results
-    numCellResults: 0          // camelCase, not num_cell_results
+    numWifiResults: wlocData.numWifiResults ?? 0,  // Use input value, default to 0 for all results
+    numCellResults: wlocData.numCellResults ?? 0   // camelCase, not num_cell_results
   };
   
   // Add wifi devices
@@ -244,6 +298,23 @@ export function parseResponse(data: Buffer): IAppleWLoc {
     return obj as IAppleWLoc;
   } catch (error) {
     throw new Error(`Failed to decode protobuf: ${error}`);
+  }
+}
+
+// Parse WifiTile response
+export function parseTileResponse(data: Buffer): IWifiTile {
+  try {
+    const message = WifiTile.decode(data);
+    const obj = WifiTile.toObject(message, {
+      longs: Number,  // Convert longs to numbers
+      defaults: true,
+      arrays: true,
+      objects: true
+    }) as IWifiTile;
+    
+    return obj;
+  } catch (error) {
+    throw new Error(`Failed to decode tile protobuf: ${error}`);
   }
 }
 
