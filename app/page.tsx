@@ -72,7 +72,6 @@ function HomeContent() {
     };
     
     setMarkers(prev => [...prev, newMarker]);
-    setSearchHistory(prev => [result, ...prev.slice(0, 9)]);
     setSelectedMarker(newMarker);
     
     // Update URL with the searched BSSID (only if not loading from URL)
@@ -80,6 +79,13 @@ function HomeContent() {
       updateUrl(result.bssid);
     }
   }, [updateUrl, isLoadingFromUrl]);
+  
+  const handleManualSearchResult = useCallback((result: BSSIDSearchResult) => {
+    // Add to search history for manual searches
+    setSearchHistory(prev => [result, ...prev.slice(0, 9)]);
+    // Call the regular handler
+    handleSearchResult(result);
+  }, [handleSearchResult]);
 
   const handleMultiSearchResults = useCallback((results: BSSIDSearchResult[]) => {
     const newMarkers: MapMarker[] = results.map((result, index) => ({
@@ -92,7 +98,7 @@ function HomeContent() {
     }));
     
     setMarkers(prev => [...prev, ...newMarkers]);
-    setSearchHistory(prev => [...results, ...prev].slice(0, 20));
+    // Don't add to search history for bulk results
     
     // Select the first result
     if (newMarkers.length > 0) {
@@ -240,6 +246,7 @@ function HomeContent() {
               isMultiMode={isMultiMode}
               onToggleMode={() => setIsMultiMode(!isMultiMode)}
               onSearchResult={handleSearchResult}
+              onManualSearchResult={handleManualSearchResult}
               onSearchResults={handleMultiSearchResults}
               isLoadingFromUrl={isLoadingFromUrl}
               urlBssid={urlBssid}
@@ -308,7 +315,7 @@ function HomeContent() {
             )}
 
             {/* Search History */}
-            {searchHistory.length > 0 && (
+            {searchHistory.length > 0 && activeTab === 'bssid' && (
               <div className="border-t pt-4 animate-slideIn" style={{ borderColor: 'var(--border-primary)' }}>
                 <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                   Search History
@@ -471,6 +478,7 @@ function HomeContent() {
                 isMultiMode={isMultiMode}
                 onToggleMode={() => setIsMultiMode(!isMultiMode)}
                 onSearchResult={handleSearchResult}
+                onManualSearchResult={handleManualSearchResult}
                 onSearchResults={handleMultiSearchResults}
                 compact={true}
                 isLoadingFromUrl={isLoadingFromUrl}

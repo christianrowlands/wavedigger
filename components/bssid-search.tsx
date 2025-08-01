@@ -9,6 +9,7 @@ import type { BSSIDSearchResult, SearchError } from '@/types';
 
 interface BSSIDSearchProps {
   onSearchResult: (result: BSSIDSearchResult) => void;
+  onManualSearchResult?: (result: BSSIDSearchResult) => void;
   onSearchResults?: (results: BSSIDSearchResult[]) => void;
   onSearchStart?: () => void;
   onSearchError?: (error: SearchError) => void;
@@ -19,6 +20,7 @@ interface BSSIDSearchProps {
 
 export default function BSSIDSearch({ 
   onSearchResult, 
+  onManualSearchResult,
   onSearchResults,
   onSearchStart,
   onSearchError,
@@ -107,8 +109,20 @@ export default function BSSIDSearch({
       
       // Handle response based on whether we got single or multiple results
       if (data.results && Array.isArray(data.results)) {
-        // Multiple results
+        // Multiple results (surrounding APs)
         setLastSearchCount(data.results.length);
+        
+        // If this was a manual search with surrounding APs, add the searched BSSID to history
+        if (includeSurrounding && onManualSearchResult) {
+          // Find the result matching the BSSID that was searched
+          const searchedResult = data.results.find(
+            (result: BSSIDSearchResult) => result.bssid.toLowerCase() === validation.normalized!.toLowerCase()
+          );
+          if (searchedResult) {
+            onManualSearchResult(searchedResult);
+          }
+        }
+        
         if (onSearchResults) {
           onSearchResults(data.results);
         } else {
@@ -118,9 +132,14 @@ export default function BSSIDSearch({
           });
         }
       } else if (data.result) {
-        // Single result
+        // Single result - this is a manual search
         setLastSearchCount(null);
-        onSearchResult(data.result);
+        if (onManualSearchResult && !includeSurrounding) {
+          // Use manual handler for single BSSID searches
+          onManualSearchResult(data.result);
+        } else {
+          onSearchResult(data.result);
+        }
       }
       
     } catch (err) {

@@ -12,6 +12,7 @@ interface SearchControlsProps {
   isMultiMode: boolean;
   onToggleMode: () => void;
   onSearchResult: (result: BSSIDSearchResult) => void;
+  onManualSearchResult?: (result: BSSIDSearchResult) => void;
   onSearchResults: (results: BSSIDSearchResult[]) => void;
   compact?: boolean;
   isLoadingFromUrl?: boolean;
@@ -28,6 +29,7 @@ export default function SearchControls({
   isMultiMode,
   onToggleMode,
   onSearchResult,
+  onManualSearchResult,
   onSearchResults,
   compact = false,
   isLoadingFromUrl = false,
@@ -75,6 +77,7 @@ export default function SearchControls({
           ) : (
             <BSSIDSearch 
               onSearchResult={onSearchResult}
+              onManualSearchResult={onManualSearchResult}
               onSearchResults={onSearchResults}
               mobileToggle={toggleButton}
               isLoadingFromUrl={isLoadingFromUrl}
@@ -150,6 +153,7 @@ export default function SearchControls({
             ) : (
               <BSSIDSearch 
                 onSearchResult={onSearchResult}
+                onManualSearchResult={onManualSearchResult}
                 onSearchResults={onSearchResults}
                 isLoadingFromUrl={isLoadingFromUrl}
                 urlBssid={urlBssid}
