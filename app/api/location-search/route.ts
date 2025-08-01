@@ -111,16 +111,13 @@ async function searchProximity(
     
     // If not found, try China endpoint
     if (!nearbyAPs || nearbyAPs.length === 0) {
-      console.log(`Trying China endpoint for ${closestBssid}`);
       nearbyAPs = await queryNearbyAPs(closestBssid, 'china');
     }
     
     if (!nearbyAPs || nearbyAPs.length === 0) {
-      console.log(`No APs found for ${closestBssid}, stopping search`);
       break;
     }
     
-    console.log(`Found ${nearbyAPs.length} APs near ${closestBssid}`);
     
     // Add all new APs to our collection
     let foundCloser = false;
@@ -145,11 +142,9 @@ async function searchProximity(
     
     // If we didn't find a closer AP, we're done
     if (!foundCloser) {
-      console.log(`No closer AP found, stopping at ${closestBssid} (${closestDistance}m away)`);
       break;
     }
     
-    console.log(`Found closer AP: ${closestBssid} (${closestDistance}m away)`);
   }
   
   return Array.from(allAPs.values());
@@ -184,7 +179,6 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log(`Starting proximity search at ${latitude}, ${longitude} with seed ${seedBssid}`);
     
     // Perform proximity search
     const results = await searchProximity(latitude, longitude, seedBssid);

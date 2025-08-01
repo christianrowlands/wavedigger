@@ -69,9 +69,7 @@ export default function LocationSearch({
         return;
       }
       
-      console.log(`Found seed BSSID ${tileData.closestBSSID} at ${tileData.distance?.toFixed(0)}m away from click point`);
       if (tileData.tilesSearched) {
-        console.log(`Searched ${tileData.tilesSearched} tiles, found data in ${tileData.tilesWithData} tiles with ${tileData.totalAPsFound} total APs`);
       }
       setSearchProgress('Refining search area...');
       
@@ -101,7 +99,6 @@ export default function LocationSearch({
         });
         setSearchProgress(null);
         onSearchResults(proximityData.results);
-        console.log(`Found ${proximityData.count} access points within 5000m (${proximityData.totalFound || proximityData.count} total) after ${proximityData.iterations || 1} iterations`);
         
         // Track successful location search
         trackLocationSearch(proximityData.count, latitude, longitude);

@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
     
     // Convert lat/lng to tile coordinates
     const { x: tileLong, y: tileLat } = toTile(latitude, longitude, zoomLevel);
-    console.log(`Converted lat:${latitude}, lng:${longitude} to tile x:${tileLong}, y:${tileLat} at zoom ${zoomLevel}`);
     
     // Try multi-tile search: center tile + 8 surrounding tiles
     const tilesToSearch = [
@@ -55,7 +54,6 @@ export async function POST(request: NextRequest) {
     let tilesWithData = 0;
     
     // Search multiple tiles
-    console.log(`Searching 9 tiles around clicked location...`);
     
     for (const [tileX, tileY] of tilesToSearch) {
       const tileKey = pack(tileX, tileY, zoomLevel);
@@ -124,7 +122,6 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    console.log(`Found ${tilesWithData} tiles with data, total ${allTileResults.length} APs`);
     
     if (allTileResults.length > 0) {
       // Sort all results by distance from clicked point
@@ -132,11 +129,6 @@ export async function POST(request: NextRequest) {
       
       // Return the closest AP across all tiles
       const closest = allTileResults[0];
-      console.log(`Closest AP across all tiles: ${closest.bssid} at ${closest.accuracy?.toFixed(0)}m from click point`);
-      
-      // Log distance distribution
-      const distances = allTileResults.slice(0, 10).map(r => r.accuracy?.toFixed(0));
-      console.log(`Top 10 closest APs distances: ${distances.join(', ')}m`);
       
       return NextResponse.json({
         closestBSSID: closest.bssid,

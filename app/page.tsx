@@ -80,11 +80,6 @@ function HomeContent() {
     
     // Fly to location if requested (for single searches)
     if (shouldFlyTo) {
-      console.log('[Page] Setting flyToLocation for search result:', {
-        bssid: result.bssid,
-        longitude: result.location.longitude,
-        latitude: result.location.latitude
-      });
       setFlyToLocation({
         longitude: result.location.longitude,
         latitude: result.location.latitude
@@ -200,7 +195,6 @@ function HomeContent() {
               const lat = parseFloat(latParam);
               const lng = parseFloat(lngParam);
               if (!isNaN(lat) && !isNaN(lng)) {
-                console.log('[Page] Setting flyToLocation from URL params:', { lat, lng });
                 setFlyToLocation({ latitude: lat, longitude: lng });
               }
             }
@@ -377,11 +371,6 @@ function HomeContent() {
                         const marker = markers.find(m => m.bssid === result.bssid);
                         if (marker) {
                           setSelectedMarker(marker);
-                          console.log('[Page] Setting flyToLocation from search history click:', {
-                            bssid: result.bssid,
-                            longitude: marker.position[0],
-                            latitude: marker.position[1]
-                          });
                           setFlyToLocation({
                             longitude: marker.position[0],
                             latitude: marker.position[1]
@@ -553,11 +542,6 @@ function HomeContent() {
           searchHistory={searchHistory}
           onMarkerSelect={(marker) => {
             setSelectedMarker(marker);
-            console.log('[Page] Setting flyToLocation from mobile sheet:', {
-              bssid: marker.bssid,
-              longitude: marker.position[0],
-              latitude: marker.position[1]
-            });
             setFlyToLocation({
               longitude: marker.position[0],
               latitude: marker.position[1]

@@ -91,7 +91,6 @@ async function queryAppleWLOC(bssid: string, endpoint: 'global' | 'china', retur
         });
       }
       
-      console.log(`Found ${results.length} APs near ${bssid}`);
       return results.length > 0 ? results : null;
     }
     
@@ -172,7 +171,6 @@ export async function POST(request: NextRequest) {
     
     if (!result) {
       // Try China endpoint as fallback
-      console.log(`BSSID ${validation.normalized} not found in global database, trying China endpoint...`);
       result = await queryAppleWLOC(validation.normalized, 'china', returnAll);
     }
     

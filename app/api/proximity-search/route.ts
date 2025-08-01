@@ -71,10 +71,8 @@ export async function POST(request: NextRequest) {
         const parsedResponse = parseResponse(Buffer.from(responseData));
         
         const wifiDevices = parsedResponse.wifiDevices || parsedResponse.wifi_devices || [];
-        console.log(`WLOC returned ${wifiDevices.length} devices for ${closestBSSID}`);
         
         let closestDistance = Infinity;
-        let newDevicesAdded = 0;
         
         // Process all returned APs
         for (const device of wifiDevices) {
@@ -102,7 +100,6 @@ export async function POST(request: NextRequest) {
             source: isChina ? 'china' : 'global',
             accuracy: distance // Store distance in accuracy field
           });
-          newDevicesAdded++;
           
           // Track closest AP for next iteration
           if (distance < closestDistance) {
@@ -111,42 +108,22 @@ export async function POST(request: NextRequest) {
           }
         }
         
-        console.log(`Added ${newDevicesAdded} new devices. Total accumulated: ${allAccessPoints.size}`);
         if (closestBSSID !== previousClosest) {
-          console.log(`New closest AP: ${closestBSSID} at ${closestDistance.toFixed(0)}m from click point`);
         }
       } catch (err) {
         console.error(`Error querying WLOC for ${closestBSSID}:`, err);
         break;
       }
       
-      console.log(`Iteration complete. Previous: ${previousClosest}, New closest: ${closestBSSID}`);
     }
     
     // Convert map to array and sort by distance
     const results = Array.from(allAccessPoints.values())
       .sort((a, b) => (a.accuracy || 0) - (b.accuracy || 0));
     
-    console.log(`Proximity search complete. Found ${results.length} total APs`);
     
     // Apply distance filtering
     const filteredResults = results.filter(ap => (ap.accuracy || 0) <= maxDistance);
-    console.log(`After filtering to ${maxDistance}m: ${filteredResults.length} APs`);
-    
-    // Log distance distribution
-    if (results.length > 0) {
-      const distances = results.map(r => r.accuracy || 0);
-      const min = Math.min(...distances);
-      const max = Math.max(...distances);
-      const median = distances[Math.floor(distances.length / 2)];
-      console.log(`Distance distribution: min=${min.toFixed(0)}m, max=${max.toFixed(0)}m, median=${median.toFixed(0)}m`);
-      
-      // Log how many are within certain ranges
-      const within500m = distances.filter(d => d <= 500).length;
-      const within1km = distances.filter(d => d <= 1000).length;
-      const within2km = distances.filter(d => d <= 2000).length;
-      console.log(`APs within: 500m=${within500m}, 1km=${within1km}, 2km=${within2km}`);
-    }
     
     return NextResponse.json({
       results: filteredResults,
