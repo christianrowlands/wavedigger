@@ -2,7 +2,9 @@
 
 import React, { useState, useRef } from 'react';
 import ShareButton from '@/components/share-button';
+import CopyButton from '@/components/copy-button';
 import { useShareUrl } from '@/hooks/use-share-url';
+import { formatBSSIDForDisplay } from '@/lib/bssid-utils';
 import type { MapMarker, BSSIDSearchResult } from '@/types';
 
 interface MobileSheetProps {
@@ -250,7 +252,7 @@ export default function MobileSheet({
             <div className="mb-4 p-3 rounded-lg glass-primary">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
-                  Selected Location
+                  Selected BSSID
                   {selectedMarker.source === 'china' && (
                     <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
                       backgroundColor: '#EE1C25', 
@@ -273,15 +275,23 @@ export default function MobileSheet({
               <div className="space-y-1 text-xs">
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
-                  <span className="font-mono">{selectedMarker.bssid}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono">{formatBSSIDForDisplay(selectedMarker.bssid)}</span>
+                    <CopyButton text={formatBSSIDForDisplay(selectedMarker.bssid)} label="BSSID" size="sm" />
+                  </div>
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ color: 'var(--text-tertiary)' }}>Latitude</span>
-                  <span className="font-mono">{selectedMarker.location.latitude.toFixed(6)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span style={{ color: 'var(--text-tertiary)' }}>Longitude</span>
-                  <span className="font-mono">{selectedMarker.location.longitude.toFixed(6)}</span>
+                  <span style={{ color: 'var(--text-tertiary)' }}>Location</span>
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono text-xs">
+                      {selectedMarker.location.latitude.toFixed(6)}, {selectedMarker.location.longitude.toFixed(6)}
+                    </span>
+                    <CopyButton 
+                      text={`${selectedMarker.location.latitude.toFixed(6)}, ${selectedMarker.location.longitude.toFixed(6)}`} 
+                      label="Location" 
+                      size="sm"
+                    />
+                  </div>
                 </div>
                 {selectedMarker.source === 'china' && (
                   <div className="flex justify-between pt-1 border-t" style={{ borderColor: 'var(--border-primary)' }}>
@@ -314,7 +324,7 @@ export default function MobileSheet({
                   }}
                 >
                   <p className="font-mono font-medium flex items-center gap-2">
-                    {result.bssid}
+                    {formatBSSIDForDisplay(result.bssid)}
                     {result.source === 'china' && (
                       <span className="text-xs font-normal px-1 py-0.5 rounded" style={{ 
                         backgroundColor: '#EE1C25', 

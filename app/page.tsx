@@ -8,8 +8,9 @@ import AboutDialog from '@/components/about-dialog';
 import MobileSheet from '@/components/mobile-sheet';
 import SearchControls from '@/components/search-controls';
 import ShareButton from '@/components/share-button';
+import CopyButton from '@/components/copy-button';
 import { useShareUrl } from '@/hooks/use-share-url';
-import { formatBSSIDForURL, parseBSSIDFromURL } from '@/lib/bssid-utils';
+import { formatBSSIDForURL, parseBSSIDFromURL, formatBSSIDForDisplay } from '@/lib/bssid-utils';
 import type { BSSIDSearchResult, MapMarker } from '@/types';
 
 // Dynamic import for deck.gl to avoid SSR issues
@@ -278,7 +279,7 @@ function HomeContent() {
               <div className="border-t pt-4 animate-slideIn" style={{ borderColor: 'var(--border-primary)' }}>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                    Selected Location
+                    Selected BSSID
                     {selectedMarker.source === 'china' && (
                       <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
                         backgroundColor: '#EE1C25', 
@@ -301,21 +302,24 @@ function HomeContent() {
                 <div className="rounded-lg p-4 space-y-2 transition-all glass-primary">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
-                    <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
-                      {selectedMarker.bssid}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+                        {formatBSSIDForDisplay(selectedMarker.bssid)}
+                      </span>
+                      <CopyButton text={formatBSSIDForDisplay(selectedMarker.bssid)} label="BSSID" />
+                    </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Latitude</span>
-                    <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
-                      {selectedMarker.location.latitude.toFixed(6)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Longitude</span>
-                    <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
-                      {selectedMarker.location.longitude.toFixed(6)}
-                    </span>
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Location</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+                        {selectedMarker.location.latitude.toFixed(6)}, {selectedMarker.location.longitude.toFixed(6)}
+                      </span>
+                      <CopyButton 
+                        text={`${selectedMarker.location.latitude.toFixed(6)}, ${selectedMarker.location.longitude.toFixed(6)}`} 
+                        label="Location" 
+                      />
+                    </div>
                   </div>
                   {selectedMarker.source === 'china' && (
                     <div className="flex items-center justify-between pt-1 border-t" style={{ borderColor: 'var(--border-primary)' }}>
@@ -362,7 +366,7 @@ function HomeContent() {
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <p className="font-medium font-mono text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                            {result.bssid}
+                            {formatBSSIDForDisplay(result.bssid)}
                             {result.source === 'china' && (
                               <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
                                 backgroundColor: '#EE1C25', 

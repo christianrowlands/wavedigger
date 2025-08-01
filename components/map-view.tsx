@@ -5,9 +5,10 @@ import DeckGL from '@deck.gl/react';
 import { Map as MapGL } from 'react-map-gl';
 import { IconLayer, ScatterplotLayer } from '@deck.gl/layers';
 import { FlyToInterpolator } from '@deck.gl/core';
-import type { PickingInfo } from '@deck.gl/core';
+import type { PickingInfo, FlyToInterpolator as FlyToInterpolatorType } from '@deck.gl/core';
 import type { ViewState, MapMarker } from '@/types';
 import { getMapIcon } from './map-icons';
+import { formatBSSIDForDisplay } from '@/lib/bssid-utils';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface MapViewProps {
@@ -26,8 +27,7 @@ const INITIAL_VIEW_STATE: ViewState = {
   latitude: 39.8283,
   zoom: 4,
   pitch: 0,
-  bearing: 0,
-  transitionDuration: 0 // Prevent zoom bounce in React 18
+  bearing: 0
 };
 
 const MAP_STYLES = {
@@ -69,7 +69,14 @@ export default function MapView({
   onMapClick,
   clickedLocation 
 }: MapViewProps) {
-  const [viewState, setViewState] = useState<ViewState>(INITIAL_VIEW_STATE);
+  // Extended view state with transition properties for DeckGL
+  const [viewState, setViewState] = useState<ViewState & { 
+    transitionDuration?: number;
+    transitionInterpolator?: FlyToInterpolatorType;
+  }>({
+    ...INITIAL_VIEW_STATE,
+    transitionDuration: 0 // Prevent zoom bounce in React 18
+  });
   const [hoveredMarker, setHoveredMarker] = useState<MapMarker | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [currentStyle, setCurrentStyle] = useState<keyof typeof MAP_STYLES>('standard');
@@ -171,7 +178,8 @@ export default function MapView({
   }, [showStyleMenu]);
 
   // Handle view state changes
-  const handleViewStateChange = useCallback(({ viewState: newViewState }: { viewState: ViewState }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleViewStateChange = useCallback(({ viewState: newViewState }: any) => {
     // Always maintain transitionDuration: 0 for user interactions to prevent bounce
     setViewState({
       ...newViewState,
@@ -199,7 +207,8 @@ export default function MapView({
         onFlyToComplete?.();
       }, 100);
     }
-  }, [flyToLocation, isMapReady]); // Intentionally not including viewState to avoid loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flyToLocation, isMapReady]); // Intentionally not including viewState and onFlyToComplete to avoid loops
 
   const handleHover = useCallback((info: PickingInfo) => {
     if (info.object) {
@@ -349,7 +358,7 @@ export default function MapView({
         }}
       >
         <div className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-          {hoveredMarker.bssid}
+          {formatBSSIDForDisplay(hoveredMarker.bssid)}
           {hoveredMarker.source === 'china' && (
             <span className="ml-2 text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
               backgroundColor: '#EE1C25', 

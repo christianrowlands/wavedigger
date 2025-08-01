@@ -55,8 +55,8 @@ export function validateBSSID(bssid: string): boolean {
 }
 
 export function formatBSSIDForDisplay(bssid: string): string {
-  const normalized = normalizeBSSID(bssid);
-  return normalized || bssid;
+  // Use normalizeBSSIDForComparison which handles padding zeros
+  return normalizeBSSIDForComparison(bssid);
 }
 
 // Format BSSID for URLs using hyphens instead of colons
