@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
 import { Map as MapGL } from 'react-map-gl';
+import type { StyleSpecification } from 'mapbox-gl';
 import { IconLayer, ScatterplotLayer } from '@deck.gl/layers';
 import { FlyToInterpolator } from '@deck.gl/core';
 import type { PickingInfo, FlyToInterpolator as FlyToInterpolatorType } from '@deck.gl/core';
@@ -307,27 +308,33 @@ export default function MapView({
   }, [iconColors]);
 
   // Memoize the Standard style object to prevent recreation on every render
-  const standardStyleObject = useMemo(() => ({
-    version: 8,
-    imports: [{
-      id: 'basemap',
-      url: 'mapbox://styles/mapbox/standard',
-      config: {
-        lightPreset: isDarkMode ? 'dusk' : 'day',
-        showPointOfInterestLabels: true,
-        showTransitLabels: true,
-        showPlaceLabels: true,
-        showRoadLabels: true
-      }
-    }],
-    sources: {
-      'mapbox-dem': {
-        type: 'raster-dem',
-        url: 'mapbox://mapbox.terrain-rgb'
-      }
-    },
-    layers: []
-  }), [isDarkMode]);
+  const standardStyleObject = useMemo(() => {
+    // Using a minimal style spec that's compatible with Mapbox Standard
+    // The imports property is a Mapbox extension to the standard spec
+    const style = {
+      version: 8,
+      imports: [{
+        id: 'basemap',
+        url: 'mapbox://styles/mapbox/standard',
+        config: {
+          lightPreset: isDarkMode ? 'dusk' : 'day',
+          showPointOfInterestLabels: true,
+          showTransitLabels: true,
+          showPlaceLabels: true,
+          showRoadLabels: true
+        }
+      }],
+      sources: {
+        'mapbox-dem': {
+          type: 'raster-dem',
+          url: 'mapbox://mapbox.terrain-rgb'
+        }
+      },
+      layers: []
+    };
+    // Cast to unknown first to bypass strict type checking for the imports property
+    return style as unknown as StyleSpecification;
+  }, [isDarkMode]);
 
   const layers = [
     // Click marker layer
