@@ -2,6 +2,10 @@
 
 Dig into wireless signals to discover their physical locations. WaveDigger helps you find Wi-Fi access points by their BSSID (MAC address), with cell tower tracking coming soon. Built with Next.js, TypeScript, and deck.gl for interactive map visualization.
 
+A hosted version can be found at [https://wavedigger.networksurvey.app](https://wavedigger.networksurvey.app).
+
+<img src="wavedigger.jpg" alt="WaveDigger Screenshot" width="600" />
+
 ## Features
 
 - **BSSID Search**: Enter a BSSID to find its approximate location
