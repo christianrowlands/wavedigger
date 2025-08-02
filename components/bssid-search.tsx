@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { Search, Loader2, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { validateAndNormalizeBSSID } from '@/lib/bssid-utils';
+import { validateAndNormalizeBSSID, normalizeBSSIDForComparison } from '@/lib/bssid-utils';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { AnalyticsEvents } from '@/lib/analytics';
 import type { BSSIDSearchResult, SearchError } from '@/types';
@@ -124,17 +124,33 @@ export default function BSSIDSearch({
           bssidOverride ? 'url' : 'manual'
         );
         
-        // If this was a manual search with surrounding APs, add the searched BSSID to history
-        if (includeSurrounding && onManualSearchResult) {
+        // When surrounding APs are included, handle the searched BSSID specially
+        if (includeSurrounding && !bssidOverride) {
           // Find the result matching the BSSID that was searched
           const searchedResult = data.results.find(
-            (result: BSSIDSearchResult) => result.bssid.toLowerCase() === validation.normalized!.toLowerCase()
+            (result: BSSIDSearchResult) => 
+              normalizeBSSIDForComparison(result.bssid) === normalizeBSSIDForComparison(validation.normalized!)
           );
-          if (searchedResult) {
+          
+          if (searchedResult && onManualSearchResult) {
+            // Add only the searched BSSID to history and fly to it
             onManualSearchResult(searchedResult);
+            
+            // Add OTHER results as regular markers (no history, no fly-to)
+            const otherResults = data.results.filter(
+              (result: BSSIDSearchResult) => 
+                normalizeBSSIDForComparison(result.bssid) !== normalizeBSSIDForComparison(validation.normalized!)
+            );
+            
+            otherResults.forEach((result: BSSIDSearchResult) => {
+              onSearchResult(result);
+            });
+            
+            return; // Don't call onSearchResults to avoid conflicts
           }
         }
         
+        // Only call onSearchResults if we didn't handle it above
         if (onSearchResults) {
           onSearchResults(data.results);
         } else {
