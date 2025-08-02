@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://wavedigger.networksurvey.app/sitemap.xml
+
+# Crawl-delay (optional, be respectful to our servers)
+Crawl-delay: 1

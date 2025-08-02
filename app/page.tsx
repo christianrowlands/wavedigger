@@ -1,5 +1,8 @@
 'use client';
 
+// TODO: When refactoring to SSR/SSG, uncomment and use this for dynamic metadata:
+// export { generateMetadata } from '@/lib/metadata-utils';
+
 import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
