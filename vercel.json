@@ -8,6 +8,15 @@
   "functions": {
     "app/api/bssid/route.ts": {
       "maxDuration": 10
+    },
+    "app/api/location-search/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/tile-search/route.ts": {
+      "maxDuration": 10
+    },
+    "app/api/proximity-search/route.ts": {
+      "maxDuration": 10
     }
   },
   "headers": [

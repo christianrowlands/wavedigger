@@ -10,6 +10,7 @@ import {
   IAppleWLoc,
   IWifiDevice 
 } from '@/lib/protobuf/schema';
+import { recordError404 } from '@/lib/rate-limit';
 
 // Apple WLOC API implementation
 async function queryAppleWLOC(bssid: string, endpoint: 'global' | 'china', returnAll: boolean = false): Promise<BSSIDSearchResult | BSSIDSearchResult[] | null> {
@@ -145,6 +146,14 @@ async function queryAppleWLOC(bssid: string, endpoint: 'global' | 'china', retur
 
 export async function POST(request: NextRequest) {
   try {
+    // Log request details for debugging bot attacks
+    const ip = request.headers.get('x-forwarded-for') || 
+                request.headers.get('x-real-ip') || 
+                'unknown';
+    const userAgent = request.headers.get('user-agent') || 'none';
+    const origin = request.headers.get('origin') || 'none';
+    const referer = request.headers.get('referer') || 'none';
+    
     const body = await request.json();
     const { bssid, returnAll = false } = body;
     
@@ -175,6 +184,22 @@ export async function POST(request: NextRequest) {
     }
     
     if (!result) {
+      // Log 404 requests to identify attack patterns
+      console.log('[404 Request]', {
+        ip,
+        bssid: validation.normalized,
+        userAgent,
+        origin,
+        referer,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Record 404 error and check if IP should be blocked
+      const shouldBlock = recordError404(ip);
+      if (shouldBlock) {
+        console.log(`[API Block Triggered] IP ${ip} has been blocked due to excessive 404 errors`);
+      }
+      
       return NextResponse.json(
         { error: { type: 'NOT_FOUND', message: 'BSSID not found in Apple\'s database. This may be a new or unregistered access point.' } as SearchError },
         { status: 404 }
