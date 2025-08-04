@@ -113,11 +113,35 @@ function HomeContent() {
     }));
     
     setMarkers(prev => [...prev, ...newMarkers]);
-    // Don't add to search history for bulk results
+    
+    // Add all results to search history
+    setSearchHistory(prev => {
+      // Combine new results with existing history, avoiding duplicates
+      const combined = [...results, ...prev];
+      // Remove duplicates based on BSSID
+      const unique = combined.filter((item, index, self) =>
+        index === self.findIndex((t) => t.bssid === item.bssid)
+      );
+      // Keep only the 10 most recent
+      return unique.slice(0, 10);
+    });
     
     // Select the first result
     if (newMarkers.length > 0) {
       setSelectedMarker(newMarkers[0]);
+      
+      // Calculate center point of all results
+      const lats = results.map(r => r.location.latitude);
+      const lngs = results.map(r => r.location.longitude);
+      
+      const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+      const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+      
+      // Fly to center of all results
+      setFlyToLocation({
+        longitude: centerLng,
+        latitude: centerLat
+      });
     }
     
     // If this was from a location search, stop the searching state
