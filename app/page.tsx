@@ -143,13 +143,44 @@ function HomeContent() {
         latitude: centerLat
       });
     }
+  }, []);
+
+  const handleLocationSearchResults = useCallback((results: BSSIDSearchResult[]) => {
+    const newMarkers: MapMarker[] = results.map((result, index) => ({
+      id: `${result.bssid}-${Date.now()}-${index}`,
+      bssid: result.bssid,
+      position: [result.location.longitude, result.location.latitude],
+      location: result.location,
+      source: result.source,
+      accuracy: result.accuracy
+    }));
     
-    // If this was from a location search, stop the searching state
-    if (isLocationSearching) {
-      setIsLocationSearching(false);
-      setClickedLocation(null);
+    setMarkers(prev => [...prev, ...newMarkers]);
+    
+    // Do NOT add to search history for location searches
+    
+    // Select the first result
+    if (newMarkers.length > 0) {
+      setSelectedMarker(newMarkers[0]);
+      
+      // Calculate center point of all results
+      const lats = results.map(r => r.location.latitude);
+      const lngs = results.map(r => r.location.longitude);
+      
+      const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+      const centerLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+      
+      // Fly to center of all results
+      setFlyToLocation({
+        longitude: centerLng,
+        latitude: centerLat
+      });
     }
-  }, [isLocationSearching]);
+    
+    // Stop the searching state
+    setIsLocationSearching(false);
+    setClickedLocation(null);
+  }, []);
 
   const handleMarkerClick = useCallback((marker: MapMarker) => {
     setSelectedMarker(marker);
@@ -306,6 +337,7 @@ function HomeContent() {
               onSearchResult={(result) => handleSearchResult(result, false)}
               onManualSearchResult={handleManualSearchResult}
               onSearchResults={handleMultiSearchResults}
+              onLocationSearchResults={handleLocationSearchResults}
               isLoadingFromUrl={isLoadingFromUrl}
               urlBssid={urlBssid}
               activeTab={activeTab}
@@ -551,6 +583,7 @@ function HomeContent() {
                 onSearchResult={(result) => handleSearchResult(result, false)}
                 onManualSearchResult={handleManualSearchResult}
                 onSearchResults={handleMultiSearchResults}
+                onLocationSearchResults={handleLocationSearchResults}
                 compact={true}
                 isLoadingFromUrl={isLoadingFromUrl}
                 urlBssid={urlBssid}

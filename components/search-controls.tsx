@@ -15,6 +15,7 @@ interface SearchControlsProps {
   onSearchResult: (result: BSSIDSearchResult) => void;
   onManualSearchResult?: (result: BSSIDSearchResult) => void;
   onSearchResults: (results: BSSIDSearchResult[]) => void;
+  onLocationSearchResults?: (results: BSSIDSearchResult[]) => void;
   compact?: boolean;
   isLoadingFromUrl?: boolean;
   urlBssid?: string | null;
@@ -32,6 +33,7 @@ export default function SearchControls({
   onSearchResult,
   onManualSearchResult,
   onSearchResults,
+  onLocationSearchResults,
   compact = false,
   isLoadingFromUrl = false,
   urlBssid = null,
@@ -73,7 +75,7 @@ export default function SearchControls({
         {activeTab === 'location' && (
           <div style={{ display: 'none' }}>
             <LocationSearch 
-              onSearchResults={onSearchResults}
+              onSearchResults={onLocationSearchResults || onSearchResults}
               onSearchStart={onLocationSearchStart}
               onSearchEnd={onLocationSearchEnd}
               isSearching={isLocationSearching}
@@ -266,7 +268,7 @@ export default function SearchControls({
         
         <TabsContent value="location">
           <LocationSearch 
-            onSearchResults={onSearchResults}
+            onSearchResults={onLocationSearchResults || onSearchResults}
             onSearchStart={onLocationSearchStart}
             onSearchEnd={onLocationSearchEnd}
             isSearching={isLocationSearching}
