@@ -485,9 +485,9 @@ function HomeContent() {
             </div>
           )}
           
-          {/* Location search loading indicator */}
+          {/* Location search loading indicator - Desktop only */}
           {isLocationSearching && (
-            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none animate-fadeIn">
+            <div className="hidden lg:block absolute top-20 left-1/2 transform -translate-x-1/2 z-20 pointer-events-none animate-fadeIn">
               <div className="glass-card rounded-lg px-4 py-2 flex items-center gap-2" style={{
                 background: 'var(--bg-secondary)',
                 border: '1px solid var(--border-primary)',
@@ -570,6 +570,7 @@ function HomeContent() {
         <MobileSheet
           selectedMarker={selectedMarker}
           searchHistory={searchHistory}
+          activeTab={activeTab}
           onMarkerSelect={(marker) => {
             setSelectedMarker(marker);
             setFlyToLocation({
@@ -579,7 +580,10 @@ function HomeContent() {
           }}
         >
           <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            {searchHistory.length} locations found
+            {activeTab === 'bssid' 
+              ? `${searchHistory.length} locations found`
+              : `${markers.length} access points`
+            }
           </div>
         </MobileSheet>
       </div>

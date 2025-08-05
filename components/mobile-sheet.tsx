@@ -12,6 +12,7 @@ interface MobileSheetProps {
   searchHistory: BSSIDSearchResult[];
   children: React.ReactNode;
   onMarkerSelect: (marker: MapMarker) => void;
+  activeTab?: 'bssid' | 'location';
 }
 
 // Sheet states
@@ -27,7 +28,8 @@ export default function MobileSheet({
   selectedMarker, 
   searchHistory, 
   children,
-  onMarkerSelect 
+  onMarkerSelect,
+  activeTab = 'bssid'
 }: MobileSheetProps) {
   const [sheetState, setSheetState] = useState<SheetState>('closed');
   const [sheetHeight, setSheetHeight] = useState(SHEET_CLOSED_HEIGHT);
@@ -312,8 +314,8 @@ export default function MobileSheet({
             </div>
           )}
 
-          {/* Search History - Only when expanded */}
-          {sheetState !== 'closed' && searchHistory.length > 0 && (
+          {/* Search History - Only when expanded and in BSSID mode */}
+          {sheetState !== 'closed' && searchHistory.length > 0 && activeTab === 'bssid' && (
             <div className="mt-4 space-y-2">
               <h4 className="text-sm font-semibold mb-2">Search History</h4>
               {searchHistory.map((result, index) => (

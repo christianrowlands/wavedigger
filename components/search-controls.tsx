@@ -4,7 +4,7 @@ import React from 'react';
 import BSSIDSearch from '@/components/bssid-search';
 import MultiBSSIDSearch from '@/components/bssid-search-multi';
 import LocationSearch from '@/components/location-search';
-import { ToggleLeft, ToggleRight, Search, MapPin } from 'lucide-react';
+import { ToggleLeft, ToggleRight, Search, MapPin, AlertCircle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAnalytics } from '@/hooks/use-analytics';
 import type { BSSIDSearchResult } from '@/types';
@@ -66,13 +66,106 @@ export default function SearchControls({
   );
 
   if (compact) {
-    // Mobile compact mode - simplified without tabs for now
-    // In future, could add swipe gestures or dropdown to switch modes
+    // Mobile compact mode with tab pills
     return (
-      <div>
+      <div className="space-y-2">
+        {/* Hidden LocationSearch component to handle search logic */}
+        {activeTab === 'location' && (
+          <div style={{ display: 'none' }}>
+            <LocationSearch 
+              onSearchResults={onSearchResults}
+              onSearchStart={onLocationSearchStart}
+              onSearchEnd={onLocationSearchEnd}
+              isSearching={isLocationSearching}
+              clickedLocation={clickedLocation}
+            />
+          </div>
+        )}
+        {/* Compact tab pills */}
+        <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+          <button
+            onClick={() => {
+              if (activeTab !== 'bssid') {
+                trackTabSwitch(activeTab, 'bssid');
+                onTabChange?.('bssid');
+              }
+            }}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+              activeTab === 'bssid' ? 'bg-white dark:bg-gray-800 shadow-sm' : ''
+            }`}
+            style={{
+              color: activeTab === 'bssid' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              backgroundColor: activeTab === 'bssid' ? 'var(--bg-primary)' : 'transparent'
+            }}
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span className="text-xs">BSSID</span>
+          </button>
+          <button
+            onClick={() => {
+              if (activeTab !== 'location') {
+                trackTabSwitch(activeTab, 'location');
+                onTabChange?.('location');
+              }
+            }}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all relative ${
+              activeTab === 'location' ? 'bg-white dark:bg-gray-800 shadow-sm' : ''
+            }`}
+            style={{
+              color: activeTab === 'location' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              backgroundColor: activeTab === 'location' ? 'var(--bg-primary)' : 'transparent'
+            }}
+          >
+            <MapPin className="h-3.5 w-3.5" />
+            <span className="text-xs">Location</span>
+            <span className="absolute -top-1 -right-1 text-[9px] px-1 rounded-full" style={{
+              backgroundColor: 'var(--color-warning-light)',
+              color: 'var(--color-warning-dark)',
+              fontWeight: '600',
+              lineHeight: '1'
+            }}>
+              β
+            </span>
+          </button>
+        </div>
+        
+        {/* Content based on active tab */}
         {activeTab === 'location' ? (
-          <div className="text-sm text-center p-2" style={{ color: 'var(--text-secondary)' }}>
-            Tap the map to search nearby APs
+          <div className="space-y-2 animate-fadeIn">
+            {/* Show search progress when searching */}
+            {isLocationSearching ? (
+              <div className="flex items-center gap-2 p-3 rounded-lg animate-pulse" style={{ 
+                backgroundColor: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-secondary)'
+              }}>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" 
+                     style={{ color: 'var(--color-primary-500)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                  Searching for nearby access points...
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-start gap-2 p-3 rounded-lg" style={{ 
+                  backgroundColor: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-secondary)'
+                }}>
+                  <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-primary-500)' }} />
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Tap anywhere on the map to search for nearby access points
+                  </p>
+                </div>
+                <div className="flex items-start gap-2 p-2 rounded-lg" style={{ 
+                  backgroundColor: 'var(--color-warning-light)',
+                  border: '1px solid var(--color-warning-border)'
+                }}>
+                  <AlertCircle className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" style={{ color: 'var(--color-warning-dark)' }} />
+                  <p className="text-xs" style={{ color: 'var(--color-warning-dark)' }}>
+                    <strong>Note:</strong> Location accuracy limited by Apple&apos;s tile system (~5km precision)
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           isMultiMode ? (
