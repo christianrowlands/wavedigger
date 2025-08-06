@@ -611,12 +611,30 @@ function HomeContent() {
                     )}
                   </h3>
                   <ShareButton 
-                    url={generateShareUrl({ 
-                      bssid: selectedMarker.bssid,
-                      latitude: selectedMarker.location.latitude,
-                      longitude: selectedMarker.location.longitude,
-                      mode: isMultiMode ? 'multi' : 'single'
-                    })}
+                    url={(() => {
+                      // Generate appropriate URL based on marker type
+                      if (selectedMarker.type === 'cell') {
+                        const towerInfo = parseCellTowerInfo(selectedMarker.bssid);
+                        if (towerInfo) {
+                          return generateShareUrl({
+                            mcc: towerInfo.mcc,
+                            mnc: towerInfo.mnc,
+                            tac: towerInfo.tacId,
+                            cellId: towerInfo.cellId,
+                            latitude: selectedMarker.location.latitude,
+                            longitude: selectedMarker.location.longitude,
+                            tab: 'celltower'
+                          });
+                        }
+                      }
+                      // Default to BSSID-based URL
+                      return generateShareUrl({ 
+                        bssid: selectedMarker.bssid,
+                        latitude: selectedMarker.location.latitude,
+                        longitude: selectedMarker.location.longitude,
+                        mode: isMultiMode ? 'multi' : 'single'
+                      });
+                    })()}
                     variant="icon"
                     analyticsSource="selected_marker"
                   />
@@ -871,12 +889,26 @@ function HomeContent() {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ShareButton 
-                            url={generateShareUrl({ 
-                              bssid: result.bssid,
-                              latitude: result.location.latitude,
-                              longitude: result.location.longitude,
-                              mode: isMultiMode ? 'multi' : 'single'
-                            })}
+                            url={(() => {
+                              const towerInfo = parseCellTowerInfo(result.bssid);
+                              if (towerInfo) {
+                                return generateShareUrl({
+                                  mcc: towerInfo.mcc,
+                                  mnc: towerInfo.mnc,
+                                  tac: towerInfo.tacId,
+                                  cellId: towerInfo.cellId,
+                                  latitude: result.location.latitude,
+                                  longitude: result.location.longitude,
+                                  tab: 'celltower'
+                                });
+                              }
+                              // Fallback (shouldn't happen for cell tower history)
+                              return generateShareUrl({ 
+                                bssid: result.bssid,
+                                latitude: result.location.latitude,
+                                longitude: result.location.longitude
+                              });
+                            })()}
                             variant="icon"
                             className="!p-1"
                             analyticsSource="search_history"

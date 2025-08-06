@@ -97,7 +97,7 @@ export default function ShareButton({
       <button
         onClick={handleShare}
         className={`p-2 rounded-lg transition-all hover:scale-105 glass-card ${className}`}
-        title="Share location"
+        title="Get share link"
         style={{ color: 'var(--text-primary)' }}
       >
         <Share2 className="h-4 w-4" />
