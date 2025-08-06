@@ -36,6 +36,7 @@ export const AnalyticsEvents = {
   COPY_LOCATION: 'copy_location',
   CLEAR_ALL_MARKERS: 'clear_all_markers',
   TOGGLE_SURROUNDING_APS: 'toggle_surrounding_aps',
+  EXTERNAL_LINK_CLICK: 'external_link_click',
   
   // Navigation
   PAGE_VIEW: 'page_view',
@@ -94,13 +95,17 @@ export interface AnalyticsEventParams {
   [AnalyticsEvents.TOGGLE_SURROUNDING_APS]: {
     enabled: boolean;
   };
+  [AnalyticsEvents.EXTERNAL_LINK_CLICK]: {
+    link_type: string;
+    link_url: string;
+  };
   [AnalyticsEvents.PAGE_VIEW]: {
     page_title: string;
     page_path: string;
   };
   [AnalyticsEvents.TAB_SWITCH]: {
-    from_tab: 'bssid' | 'location';
-    to_tab: 'bssid' | 'location';
+    from_tab: 'bssid' | 'location' | 'celltower';
+    to_tab: 'bssid' | 'location' | 'celltower';
   };
   [AnalyticsEvents.URL_BSSID_LOAD]: {
     success: boolean;

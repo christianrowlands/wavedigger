@@ -98,7 +98,7 @@ export default function AboutDialog() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:no-underline"
-                style={{ color: 'var(--color-primary-500)' }}
+                style={{ color: 'var(--color-primary)' }}
               >
                 apple-corelocation-experiments
               </a>{' '}

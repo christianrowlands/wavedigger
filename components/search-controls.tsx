@@ -4,10 +4,11 @@ import React from 'react';
 import BSSIDSearch from '@/components/bssid-search';
 import MultiBSSIDSearch from '@/components/bssid-search-multi';
 import LocationSearch from '@/components/location-search';
-import { ToggleLeft, ToggleRight, Search, MapPin, AlertCircle } from 'lucide-react';
+import CellTowerSearch from '@/components/cell-tower-search';
+import { ToggleLeft, ToggleRight, Search, MapPin, AlertCircle, Signal } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAnalytics } from '@/hooks/use-analytics';
-import type { BSSIDSearchResult } from '@/types';
+import type { BSSIDSearchResult, CellTowerSearchResult } from '@/types';
 
 interface SearchControlsProps {
   isMultiMode: boolean;
@@ -16,11 +17,12 @@ interface SearchControlsProps {
   onManualSearchResult?: (result: BSSIDSearchResult) => void;
   onSearchResults: (results: BSSIDSearchResult[]) => void;
   onLocationSearchResults?: (results: BSSIDSearchResult[]) => void;
+  onCellTowerSearchResults?: (results: CellTowerSearchResult[]) => void;
   compact?: boolean;
   isLoadingFromUrl?: boolean;
   urlBssid?: string | null;
-  activeTab?: 'bssid' | 'location';
-  onTabChange?: (tab: 'bssid' | 'location') => void;
+  activeTab?: 'bssid' | 'location' | 'celltower';
+  onTabChange?: (tab: 'bssid' | 'location' | 'celltower') => void;
   onLocationSearchStart?: () => void;
   onLocationSearchEnd?: () => void;
   isLocationSearching?: boolean;
@@ -34,6 +36,7 @@ export default function SearchControls({
   onManualSearchResult,
   onSearchResults,
   onLocationSearchResults,
+  onCellTowerSearchResults,
   compact = false,
   isLoadingFromUrl = false,
   urlBssid = null,
@@ -83,7 +86,7 @@ export default function SearchControls({
             />
           </div>
         )}
-        {/* Compact tab pills */}
+        {/* Compact tab pills - 3 tabs */}
         <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
           <button
             onClick={() => {
@@ -129,10 +132,44 @@ export default function SearchControls({
               β
             </span>
           </button>
+          <button
+            onClick={() => {
+              if (activeTab !== 'celltower') {
+                trackTabSwitch(activeTab, 'celltower');
+                onTabChange?.('celltower');
+              }
+            }}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+              activeTab === 'celltower' ? 'bg-white dark:bg-gray-800 shadow-sm' : ''
+            }`}
+            style={{
+              color: activeTab === 'celltower' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              backgroundColor: activeTab === 'celltower' ? 'var(--bg-primary)' : 'transparent'
+            }}
+          >
+            <Signal className="h-3.5 w-3.5" />
+            <span className="text-xs">Cell</span>
+          </button>
         </div>
         
         {/* Content based on active tab */}
-        {activeTab === 'location' ? (
+        {activeTab === 'celltower' ? (
+          <div className="space-y-2 animate-fadeIn">
+            <CellTowerSearch 
+              onSearchResults={onCellTowerSearchResults || ((results) => {
+                // Convert cell tower results to BSSID results format for compatibility
+                const bssidResults = results.map(r => ({
+                  bssid: `Cell-${r.tower.cellId}`,
+                  location: r.location,
+                  accuracy: r.accuracy,
+                  source: r.source
+                } as BSSIDSearchResult));
+                onSearchResults(bssidResults);
+              })}
+              compact={true}
+            />
+          </div>
+        ) : activeTab === 'location' ? (
           <div className="space-y-2 animate-fadeIn">
             {/* Show search progress when searching */}
             {isLocationSearching ? (
@@ -190,13 +227,17 @@ export default function SearchControls({
   // Desktop layout with tabs
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-4">Search Access Points</h2>
+      <h2 className="text-lg font-semibold mb-4">
+        {activeTab === 'celltower' ? 'Search LTE Towers' : 
+         activeTab === 'location' ? 'Search by Location' : 
+         'Search Access Points'}
+      </h2>
       
       <Tabs 
         defaultValue="bssid"
         value={activeTab} 
         onValueChange={(value) => {
-          const newTab = value as 'bssid' | 'location';
+          const newTab = value as 'bssid' | 'location' | 'celltower';
           if (newTab !== activeTab) {
             trackTabSwitch(activeTab, newTab);
           }
@@ -204,21 +245,26 @@ export default function SearchControls({
         }}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
           <TabsTrigger value="bssid" className="flex items-center gap-2">
             <Search className="h-4 w-4" />
             <span>BSSID Lookup</span>
           </TabsTrigger>
-          <TabsTrigger value="location" className="flex items-center gap-2">
+          <TabsTrigger value="location" className="flex items-center gap-2 relative">
             <MapPin className="h-4 w-4" />
             <span>Location Search</span>
-            <span className="text-xs px-1.5 py-0.5 rounded-full ml-1" style={{
+            <span className="absolute -top-1 -right-1 text-[9px] px-1 rounded-full" style={{
               backgroundColor: 'var(--color-warning-light)',
               color: 'var(--color-warning-dark)',
-              fontWeight: '600'
+              fontWeight: '600',
+              lineHeight: '1'
             }}>
-              Beta
+              β
             </span>
+          </TabsTrigger>
+          <TabsTrigger value="celltower" className="flex items-center gap-2">
+            <Signal className="h-4 w-4" />
+            <span>Cell Tower</span>
           </TabsTrigger>
         </TabsList>
         
@@ -274,6 +320,26 @@ export default function SearchControls({
             isSearching={isLocationSearching}
             clickedLocation={clickedLocation}
           />
+        </TabsContent>
+        
+        <TabsContent value="celltower">
+          <div className="space-y-4">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Search for LTE cell towers by network parameters
+            </p>
+            <CellTowerSearch 
+              onSearchResults={onCellTowerSearchResults || ((results) => {
+                // Convert cell tower results to BSSID results format for compatibility
+                const bssidResults = results.map(r => ({
+                  bssid: `Cell-${r.tower.cellId}`,
+                  location: r.location,
+                  accuracy: r.accuracy,
+                  source: r.source
+                } as BSSIDSearchResult));
+                onSearchResults(bssidResults);
+              })}
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

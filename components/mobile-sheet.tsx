@@ -12,7 +12,7 @@ interface MobileSheetProps {
   searchHistory: BSSIDSearchResult[];
   children: React.ReactNode;
   onMarkerSelect: (marker: MapMarker) => void;
-  activeTab?: 'bssid' | 'location';
+  activeTab?: 'bssid' | 'location' | 'celltower';
 }
 
 // Sheet states

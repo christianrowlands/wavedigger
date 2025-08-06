@@ -133,6 +133,16 @@ export interface IDeviceType {
   model: string;
 }
 
+export interface ICellTower {
+  mcc?: number;
+  mnc?: number;
+  cellId?: number;
+  tacId?: number;
+  location?: ILocation;
+  uarfcn?: number;
+  pid?: number;
+}
+
 export interface IAppleWLoc {
   wifi_devices?: IWifiDevice[];
   wifiDevices?: IWifiDevice[];  // Support both for compatibility
@@ -142,14 +152,10 @@ export interface IAppleWLoc {
   numWifiResults?: number;
   app_bundle_id?: string;
   appBundleId?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  cell_tower_response?: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  cellTowerResponse?: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  cell_tower_request?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  cellTowerRequest?: any;
+  cell_tower_response?: ICellTower[];
+  cellTowerResponse?: ICellTower[];
+  cell_tower_request?: ICellTower;
+  cellTowerRequest?: ICellTower;
   device_type?: IDeviceType;
   deviceType?: IDeviceType;
 }
@@ -227,6 +233,17 @@ export function serializeRequest(wlocData: IAppleWLoc): Buffer {
       bssid: device.bssid
       // Don't include location in request
     }));
+  }
+  
+  // Add cell tower request if provided
+  const cellTowerRequest = wlocData.cellTowerRequest || wlocData.cell_tower_request;
+  if (cellTowerRequest) {
+    protoData.cellTowerRequest = {
+      mcc: cellTowerRequest.mcc,
+      mnc: cellTowerRequest.mnc,
+      cellId: cellTowerRequest.cellId,
+      tacId: cellTowerRequest.tacId
+    };
   }
   
   // Add device type if provided

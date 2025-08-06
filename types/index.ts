@@ -32,4 +32,19 @@ export interface MapMarker {
   location: Location;
   source?: 'global' | 'china';
   accuracy?: number;
+  type?: 'wifi' | 'cell';
+}
+
+export interface CellTowerInfo {
+  mcc: number;
+  mnc: number;
+  cellId: number;
+  tacId: number;
+}
+
+export interface CellTowerSearchResult {
+  tower: CellTowerInfo;
+  location: Location;
+  accuracy?: number;
+  source?: 'global' | 'china';
 }

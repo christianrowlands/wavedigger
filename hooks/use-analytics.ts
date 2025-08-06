@@ -112,8 +112,8 @@ export function useAnalytics() {
   }, [logEvent]);
 
   const trackTabSwitch = useCallback((
-    fromTab: 'bssid' | 'location',
-    toTab: 'bssid' | 'location'
+    fromTab: 'bssid' | 'location' | 'celltower',
+    toTab: 'bssid' | 'location' | 'celltower'
   ) => {
     logEvent(AnalyticsEvents.TAB_SWITCH, {
       from_tab: fromTab,

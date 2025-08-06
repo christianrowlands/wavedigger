@@ -19,7 +19,7 @@ interface MapViewProps {
   onMarkerClick?: (marker: MapMarker) => void;
   selectedMarker?: MapMarker | null;
   mapboxToken?: string;
-  flyToLocation?: { longitude: number; latitude: number } | null;
+  flyToLocation?: { longitude: number; latitude: number; zoom?: number } | null;
   onFlyToComplete?: () => void;
   onMapClick?: (longitude: number, latitude: number) => void;
   clickedLocation?: { latitude: number; longitude: number } | null;
@@ -229,7 +229,7 @@ export default function MapView({
         ...viewState,
         longitude: flyToLocation.longitude,
         latitude: flyToLocation.latitude,
-        zoom: 15,
+        zoom: flyToLocation.zoom || 15,
         transitionDuration: 2000,
         transitionInterpolator: new FlyToInterpolator()
       });
@@ -272,7 +272,7 @@ export default function MapView({
   const iconMapping = useMemo(() => {
     const mapping: Record<string, { url: string; width: number; height: number; anchorY: number }> = {};
     
-    // Pre-generate all icon variations
+    // Pre-generate all icon variations for WiFi APs
     (['location-pin', 'location-pin-china'] as const).forEach(type => {
       // Regular icon
       mapping[`${type}-regular`] = {
@@ -287,6 +287,38 @@ export default function MapView({
         width: 48,
         height: 48,
         anchorY: 38
+      };
+      // Selected icon
+      mapping[`${type}-selected`] = {
+        url: getMapIcon(type, iconColors.hoverGradientStart, iconColors.hoverGradientEnd, false, undefined, true, 72),
+        width: 72,
+        height: 72,
+        anchorY: 66
+      };
+      // Selected + hovered icon
+      mapping[`${type}-selected-hover`] = {
+        url: getMapIcon(type, iconColors.hoverGradientStart, iconColors.hoverGradientEnd, true, undefined, true, 72),
+        width: 72,
+        height: 72,
+        anchorY: 66
+      };
+    });
+    
+    // Pre-generate all icon variations for Cell Towers
+    (['cell-tower', 'cell-tower-china'] as const).forEach(type => {
+      // Regular icon
+      mapping[`${type}-regular`] = {
+        url: getMapIcon(type, iconColors.gradientStart, iconColors.hoverGradientStart, false, undefined, false, 48),
+        width: 48,
+        height: 48,
+        anchorY: 44
+      };
+      // Hovered icon
+      mapping[`${type}-hover`] = {
+        url: getMapIcon(type, iconColors.gradientStart, iconColors.hoverGradientStart, true, undefined, false, 48),
+        width: 48,
+        height: 48,
+        anchorY: 44
       };
       // Selected icon
       mapping[`${type}-selected`] = {
@@ -367,7 +399,10 @@ export default function MapView({
       getIcon: (d: MapMarker) => {
         const isChina = d.source === 'china';
         const isHovered = hoveredMarker?.id === d.id;
-        const iconType = isChina ? 'location-pin-china' : 'location-pin';
+        const isTower = d.type === 'cell';
+        const iconType = isTower 
+          ? (isChina ? 'cell-tower-china' : 'cell-tower')
+          : (isChina ? 'location-pin-china' : 'location-pin');
         const iconKey = `${iconType}-${isHovered ? 'hover' : 'regular'}`;
         return iconMapping[iconKey];
       },
@@ -391,7 +426,10 @@ export default function MapView({
       getIcon: (d: MapMarker) => {
         const isChina = d.source === 'china';
         const isHovered = hoveredMarker?.id === d.id;
-        const iconType = isChina ? 'location-pin-china' : 'location-pin';
+        const isTower = d.type === 'cell';
+        const iconType = isTower 
+          ? (isChina ? 'cell-tower-china' : 'cell-tower')
+          : (isChina ? 'location-pin-china' : 'location-pin');
         const iconKey = `${iconType}-selected${isHovered ? '-hover' : ''}`;
         return iconMapping[iconKey];
       },

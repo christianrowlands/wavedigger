@@ -16,7 +16,8 @@ import { useShareUrl } from '@/hooks/use-share-url';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { AnalyticsEvents } from '@/lib/analytics';
 import { formatBSSIDForURL, parseBSSIDFromURL, formatBSSIDForDisplay } from '@/lib/bssid-utils';
-import type { BSSIDSearchResult, MapMarker } from '@/types';
+import type { BSSIDSearchResult, MapMarker, CellTowerSearchResult } from '@/types';
+import { formatCellTowerInfo, isCellTowerLabel, parseCellTowerInfo } from '@/lib/cell-tower-utils';
 
 // Dynamic import for deck.gl to avoid SSR issues
 const MapView = dynamic(() => import('@/components/map-view'), {
@@ -32,11 +33,12 @@ function HomeContent() {
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
   const [searchHistory, setSearchHistory] = useState<BSSIDSearchResult[]>([]);
+  const [cellTowerSearchHistory, setCellTowerSearchHistory] = useState<BSSIDSearchResult[]>([]);
   const [isMultiMode, setIsMultiMode] = useState(false);
-  const [flyToLocation, setFlyToLocation] = useState<{ longitude: number; latitude: number } | null>(null);
+  const [flyToLocation, setFlyToLocation] = useState<{ longitude: number; latitude: number; zoom?: number } | null>(null);
   const [isLoadingFromUrl, setIsLoadingFromUrl] = useState(false);
   const [urlBssid, setUrlBssid] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'bssid' | 'location'>('bssid');
+  const [activeTab, setActiveTab] = useState<'bssid' | 'location' | 'celltower'>('bssid');
   const [clickedLocation, setClickedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isLocationSearching, setIsLocationSearching] = useState(false);
   
@@ -47,17 +49,59 @@ function HomeContent() {
   const { trackClearAllMarkers, logEvent } = useAnalytics();
 
   // Update URL with current search state
-  const updateUrl = useCallback((bssid?: string) => {
+  const updateUrl = useCallback((options?: {
+    bssid?: string;
+    mcc?: number;
+    mnc?: number;
+    tac?: number;
+    cellId?: number;
+    returnAll?: boolean;
+    tab?: string;
+    clearTower?: boolean;
+  }) => {
     // Start with existing search params to preserve them
     const params = new URLSearchParams(searchParams.toString());
     
-    if (bssid) {
+    // Handle BSSID parameter
+    if (options?.bssid) {
       // Format BSSID with hyphens for cleaner URLs
-      params.set('bssid', formatBSSIDForURL(bssid));
-    } else if (!bssid && params.has('bssid')) {
+      params.set('bssid', formatBSSIDForURL(options.bssid));
+      // Clear tower params if setting BSSID
+      params.delete('mcc');
+      params.delete('mnc');
+      params.delete('tac');
+      params.delete('cellId');
+      params.delete('returnAll');
+    } else if (!options?.bssid && params.has('bssid')) {
       params.delete('bssid');
     }
     
+    // Handle cell tower parameters
+    if (options?.mcc !== undefined && options?.mnc !== undefined && 
+        options?.tac !== undefined && options?.cellId !== undefined) {
+      params.set('mcc', options.mcc.toString());
+      params.set('mnc', options.mnc.toString());
+      params.set('tac', options.tac.toString());
+      params.set('cellId', options.cellId.toString());
+      if (options.returnAll !== undefined) {
+        params.set('returnAll', options.returnAll.toString());
+      }
+      // Clear BSSID if setting tower params
+      params.delete('bssid');
+    } else if (options?.clearTower) {
+      params.delete('mcc');
+      params.delete('mnc');
+      params.delete('tac');
+      params.delete('cellId');
+      params.delete('returnAll');
+    }
+    
+    // Handle tab parameter
+    if (options?.tab) {
+      params.set('tab', options.tab);
+    }
+    
+    // Handle multi mode
     if (isMultiMode) {
       params.set('mode', 'multi');
     } else {
@@ -91,13 +135,15 @@ function HomeContent() {
     
     // Update URL with the searched BSSID (only if not loading from URL)
     if (!isLoadingFromUrl) {
-      updateUrl(result.bssid);
+      updateUrl({ bssid: result.bssid });
     }
   }, [updateUrl, isLoadingFromUrl]);
   
   const handleManualSearchResult = useCallback((result: BSSIDSearchResult) => {
-    // Add to search history for manual searches
-    setSearchHistory(prev => [result, ...prev.slice(0, 9)]);
+    // Add to search history for manual searches (only if it's not a cell tower)
+    if (!isCellTowerLabel(result.bssid)) {
+      setSearchHistory(prev => [result, ...prev.slice(0, 9)]);
+    }
     // Call the regular handler with flyTo enabled for manual searches
     handleSearchResult(result, true);
   }, [handleSearchResult]);
@@ -114,17 +160,20 @@ function HomeContent() {
     
     setMarkers(prev => [...prev, ...newMarkers]);
     
-    // Add all results to search history
-    setSearchHistory(prev => {
-      // Combine new results with existing history, avoiding duplicates
-      const combined = [...results, ...prev];
-      // Remove duplicates based on BSSID
-      const unique = combined.filter((item, index, self) =>
-        index === self.findIndex((t) => t.bssid === item.bssid)
-      );
-      // Keep only the 10 most recent
-      return unique.slice(0, 10);
-    });
+    // Add all results to search history (only non-cell tower results)
+    const nonCellTowerResults = results.filter(r => !isCellTowerLabel(r.bssid));
+    if (nonCellTowerResults.length > 0) {
+      setSearchHistory(prev => {
+        // Combine new results with existing history, avoiding duplicates
+        const combined = [...nonCellTowerResults, ...prev];
+        // Remove duplicates based on BSSID
+        const unique = combined.filter((item, index, self) =>
+          index === self.findIndex((t) => t.bssid === item.bssid)
+        );
+        // Keep only the 10 most recent
+        return unique.slice(0, 10);
+      });
+    }
     
     // Select the first result
     if (newMarkers.length > 0) {
@@ -144,6 +193,112 @@ function HomeContent() {
       });
     }
   }, []);
+
+  const handleCellTowerSearchResults = useCallback((results: CellTowerSearchResult[], searchParams?: {
+    mcc: number;
+    mnc: number;
+    tac: number;
+    cellId: number;
+    returnAll: boolean;
+  }) => {
+    const newMarkers: MapMarker[] = results.map((result, index) => {
+      const towerLabel = formatCellTowerInfo(
+        result.tower.mcc,
+        result.tower.mnc,
+        result.tower.cellId,
+        result.tower.tacId
+      );
+      return {
+        id: `cell-${result.tower.cellId}-${Date.now()}-${index}`,
+        bssid: towerLabel,
+        position: [result.location.longitude, result.location.latitude],
+        location: result.location,
+        source: result.source,
+        accuracy: result.accuracy,
+        type: 'cell' as const
+      };
+    });
+    
+    setMarkers(newMarkers);
+    // Select the first tower (the searched one)
+    if (newMarkers.length > 0) {
+      setSelectedMarker(newMarkers[0]);
+    } else {
+      setSelectedMarker(null);
+    }
+    
+    // Zoom to show all results
+    if (results.length > 0) {
+      const bounds = {
+        minLat: Math.min(...results.map(r => r.location.latitude)),
+        maxLat: Math.max(...results.map(r => r.location.latitude)),
+        minLng: Math.min(...results.map(r => r.location.longitude)),
+        maxLng: Math.max(...results.map(r => r.location.longitude))
+      };
+      
+      const centerLat = (bounds.minLat + bounds.maxLat) / 2;
+      const centerLng = (bounds.minLng + bounds.maxLng) / 2;
+      
+      // Calculate appropriate zoom level based on bounds
+      const latSpan = bounds.maxLat - bounds.minLat;
+      const lngSpan = bounds.maxLng - bounds.minLng;
+      const span = Math.max(latSpan, lngSpan);
+      
+      let zoom = 16; // Default close zoom for single result
+      if (span > 0.5) zoom = 8;
+      else if (span > 0.2) zoom = 10;
+      else if (span > 0.1) zoom = 11;
+      else if (span > 0.05) zoom = 12;
+      else if (span > 0.02) zoom = 13;
+      else if (span > 0.01) zoom = 14;
+      else if (span > 0.005) zoom = 15;
+      
+      setFlyToLocation({
+        longitude: centerLng,
+        latitude: centerLat,
+        zoom: zoom
+      });
+    }
+    
+    // Add to cell tower history - convert first cell tower to BSSID format for compatibility
+    if (results.length > 0) {
+      const towerLabel = formatCellTowerInfo(
+        results[0].tower.mcc,
+        results[0].tower.mnc,
+        results[0].tower.cellId,
+        results[0].tower.tacId
+      );
+      
+      const historyItem: BSSIDSearchResult = {
+        bssid: towerLabel,
+        location: results[0].location,
+        accuracy: results[0].accuracy,
+        timestamp: new Date().toISOString(),
+        source: results[0].source
+      };
+      
+      setCellTowerSearchHistory(prev => {
+        const newHistory = [historyItem, ...prev.filter(item => 
+          item.bssid !== towerLabel
+        )].slice(0, 20);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('cellTowerSearchHistory', JSON.stringify(newHistory));
+        }
+        return newHistory;
+      });
+    }
+    
+    // Update URL with tower parameters if provided
+    if (searchParams && !isLoadingFromUrl) {
+      updateUrl({
+        mcc: searchParams.mcc,
+        mnc: searchParams.mnc,
+        tac: searchParams.tac,
+        cellId: searchParams.cellId,
+        returnAll: searchParams.returnAll
+      });
+    }
+  }, [updateUrl, isLoadingFromUrl]);
 
   const handleLocationSearchResults = useCallback((results: BSSIDSearchResult[]) => {
     const newMarkers: MapMarker[] = results.map((result, index) => ({
@@ -193,6 +348,11 @@ function HomeContent() {
     }
   }, [activeTab]);
 
+  const handleTabChange = useCallback((tab: 'bssid' | 'location' | 'celltower') => {
+    setActiveTab(tab);
+    updateUrl({ tab });
+  }, [updateUrl]);
+
   const handleClearAll = () => {
     // Track the clear all action before clearing
     trackClearAllMarkers(markers.length);
@@ -200,6 +360,7 @@ function HomeContent() {
     setMarkers([]);
     setSelectedMarker(null);
     setSearchHistory([]);
+    setCellTowerSearchHistory([]);
     // Clear URL parameters when clearing all
     router.push('/');
   };
@@ -212,12 +373,62 @@ function HomeContent() {
     const modeParam = searchParams.get('mode');
     const latParam = searchParams.get('lat');
     const lngParam = searchParams.get('lng');
+    const tabParam = searchParams.get('tab');
+    const mccParam = searchParams.get('mcc');
+    const mncParam = searchParams.get('mnc');
+    const tacParam = searchParams.get('tac');
+    const cellIdParam = searchParams.get('cellId');
+    const returnAllParam = searchParams.get('returnAll');
+    
+    // Set tab if provided
+    if (tabParam && (tabParam === 'bssid' || tabParam === 'location' || tabParam === 'celltower')) {
+      setActiveTab(tabParam);
+    }
     
     if (modeParam === 'multi') {
       setIsMultiMode(true);
     }
     
-    if (bssidParam && !hasProcessedUrl.current) {
+    // Handle cell tower search from URL
+    if (mccParam && mncParam && tacParam && cellIdParam && !hasProcessedUrl.current) {
+      hasProcessedUrl.current = true;
+      setIsLoadingFromUrl(true);
+      
+      const searchCellTower = async () => {
+        try {
+          const params = new URLSearchParams({
+            mcc: mccParam,
+            mnc: mncParam,
+            tacId: tacParam,
+            cellId: cellIdParam,
+            returnAll: returnAllParam === 'true' ? 'true' : 'false'
+          });
+          
+          const response = await fetch(`/api/cell-tower?${params}`);
+          const data = await response.json();
+          
+          if (response.ok && data.results) {
+            // Handle the cell tower results
+            handleCellTowerSearchResults(data.results, {
+              mcc: parseInt(mccParam, 10),
+              mnc: parseInt(mncParam, 10),
+              tac: parseInt(tacParam, 10),
+              cellId: parseInt(cellIdParam, 10),
+              returnAll: returnAllParam === 'true'
+            });
+            
+            // Set tab to cell tower if not already set
+            setActiveTab('celltower');
+          }
+        } catch (error) {
+          console.error('Error loading shared cell tower:', error);
+        } finally {
+          setIsLoadingFromUrl(false);
+        }
+      };
+      
+      searchCellTower();
+    } else if (bssidParam && !hasProcessedUrl.current) {
       hasProcessedUrl.current = true;
       setIsLoadingFromUrl(true);
       
@@ -248,8 +459,10 @@ function HomeContent() {
             // For URL-loaded searches, fly to the location
             handleSearchResult(data.result, true);
             
-            // Add to search history for URL-loaded searches
-            setSearchHistory(prev => [data.result, ...prev.slice(0, 9)]);
+            // Add to search history for URL-loaded searches (only if it's not a cell tower)
+            if (!isCellTowerLabel(data.result.bssid)) {
+              setSearchHistory(prev => [data.result, ...prev.slice(0, 9)]);
+            }
             
             // If specific lat/lng provided, use those instead
             if (latParam && lngParam) {
@@ -276,7 +489,7 @@ function HomeContent() {
       
       searchBssid();
     }
-  }, [searchParams, handleSearchResult, logEvent]);
+  }, [searchParams, handleSearchResult, handleCellTowerSearchResults, logEvent]);
 
   return (
     <div className="h-full flex flex-col gradient-mesh-vibrant mobile-no-overscroll" style={{ background: 'var(--bg-primary)', position: 'fixed', inset: 0 }}>
@@ -338,10 +551,11 @@ function HomeContent() {
               onManualSearchResult={handleManualSearchResult}
               onSearchResults={handleMultiSearchResults}
               onLocationSearchResults={handleLocationSearchResults}
+              onCellTowerSearchResults={handleCellTowerSearchResults}
               isLoadingFromUrl={isLoadingFromUrl}
               urlBssid={urlBssid}
               activeTab={activeTab}
-              onTabChange={setActiveTab}
+              onTabChange={handleTabChange}
               onLocationSearchStart={() => setIsLocationSearching(true)}
               onLocationSearchEnd={() => setIsLocationSearching(false)}
               isLocationSearching={isLocationSearching}
@@ -353,7 +567,7 @@ function HomeContent() {
               <div className="border-t pt-4 animate-slideIn" style={{ borderColor: 'var(--border-primary)' }}>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                    Selected BSSID
+                    {selectedMarker.type === 'cell' ? 'Selected Tower' : 'Selected BSSID'}
                     {selectedMarker.source === 'china' && (
                       <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
                         backgroundColor: '#EE1C25', 
@@ -375,20 +589,78 @@ function HomeContent() {
                   />
                 </div>
                 <div className="rounded-lg p-4 space-y-2 transition-all glass-primary">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
-                        {formatBSSIDForDisplay(selectedMarker.bssid)}
-                      </span>
-                      <CopyButton 
-                        text={formatBSSIDForDisplay(selectedMarker.bssid)} 
-                        label="BSSID"
-                        analyticsType="bssid"
-                        analyticsSource="selected_marker"
-                      />
+                  {selectedMarker.type === 'cell' ? (
+                    // Cell Tower formatting
+                    (() => {
+                      const towerInfo = parseCellTowerInfo(selectedMarker.bssid);
+                      if (!towerInfo) return null;
+                      return (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Carrier</span>
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                              {towerInfo.carrier}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>MCC / MNC</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+                                {towerInfo.mcc} / {towerInfo.mnc}
+                              </span>
+                              <CopyButton 
+                                text={`${towerInfo.mcc}/${towerInfo.mnc}`} 
+                                label="MCC/MNC"
+                                analyticsSource="selected_marker"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>TAC</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+                                {towerInfo.tacId}
+                              </span>
+                              <CopyButton 
+                                text={towerInfo.tacId.toString()} 
+                                label="TAC"
+                                analyticsSource="selected_marker"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Cell ID</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+                                {towerInfo.cellId}
+                              </span>
+                              <CopyButton 
+                                text={towerInfo.cellId.toString()} 
+                                label="Cell ID"
+                                analyticsSource="selected_marker"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()
+                  ) : (
+                    // BSSID formatting
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+                          {formatBSSIDForDisplay(selectedMarker.bssid)}
+                        </span>
+                        <CopyButton 
+                          text={formatBSSIDForDisplay(selectedMarker.bssid)} 
+                          label="BSSID"
+                          analyticsType="bssid"
+                          analyticsSource="selected_marker"
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Location</span>
                     <div className="flex items-center gap-2">
@@ -415,7 +687,7 @@ function HomeContent() {
               </div>
             )}
 
-            {/* Search History */}
+            {/* BSSID Search History */}
             {searchHistory.length > 0 && activeTab === 'bssid' && (
               <div className="border-t pt-4 animate-slideIn" style={{ borderColor: 'var(--border-primary)' }}>
                 <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
@@ -452,6 +724,78 @@ function HomeContent() {
                                 CN
                               </span>
                             )}
+                          </p>
+                          <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--text-tertiary)' }}>
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {result.location.latitude.toFixed(4)}, {result.location.longitude.toFixed(4)}
+                          </p>
+                        </div>
+                        <div 
+                          className="opacity-0 group-hover:opacity-100 transition-opacity" 
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ShareButton 
+                            url={generateShareUrl({ 
+                              bssid: result.bssid,
+                              latitude: result.location.latitude,
+                              longitude: result.location.longitude,
+                              mode: isMultiMode ? 'multi' : 'single'
+                            })}
+                            variant="icon"
+                            className="!p-1"
+                            analyticsSource="search_history"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Cell Tower Search History */}
+            {cellTowerSearchHistory.length > 0 && activeTab === 'celltower' && (
+              <div className="border-t pt-4 animate-slideIn" style={{ borderColor: 'var(--border-primary)' }}>
+                <h3 className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+                  Tower Search History
+                </h3>
+                <div className="space-y-2">
+                  {cellTowerSearchHistory.map((result, index) => (
+                    <div
+                      key={`${result.bssid}-${index}`}
+                      className="rounded-lg p-3 cursor-pointer card-hover glass-card animate-fadeIn group relative"
+                      style={{ 
+                        animationDelay: `${index * 50}ms`
+                      }}
+                      onClick={() => {
+                        const marker = markers.find(m => m.bssid === result.bssid);
+                        if (marker) {
+                          setSelectedMarker(marker);
+                          setFlyToLocation({
+                            longitude: marker.position[0],
+                            latitude: marker.position[1]
+                          });
+                        }
+                      }}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                            {result.bssid.split(' - ')[0]}
+                            {result.source === 'china' && (
+                              <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
+                                backgroundColor: '#EE1C25', 
+                                color: 'white' 
+                              }}>
+                                CN
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                            {result.bssid.split(' - ')[1]}
                           </p>
                           <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--text-tertiary)' }}>
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -584,11 +928,12 @@ function HomeContent() {
                 onManualSearchResult={handleManualSearchResult}
                 onSearchResults={handleMultiSearchResults}
                 onLocationSearchResults={handleLocationSearchResults}
+              onCellTowerSearchResults={handleCellTowerSearchResults}
                 compact={true}
                 isLoadingFromUrl={isLoadingFromUrl}
                 urlBssid={urlBssid}
                 activeTab={activeTab}
-                onTabChange={setActiveTab}
+                onTabChange={handleTabChange}
                 onLocationSearchStart={() => setIsLocationSearching(true)}
                 onLocationSearchEnd={() => setIsLocationSearching(false)}
                 isLocationSearching={isLocationSearching}
