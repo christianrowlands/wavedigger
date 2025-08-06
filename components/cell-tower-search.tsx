@@ -17,17 +17,25 @@ interface CellTowerSearchProps {
   }) => void;
   onError?: (error: SearchError) => void;
   compact?: boolean;
+  initialMcc?: string;
+  initialMnc?: string;
+  initialTac?: string;
+  initialCellId?: string;
 }
 
 export default function CellTowerSearch({ 
   onSearchResults, 
   onError,
-  compact = false 
+  compact = false,
+  initialMcc = '',
+  initialMnc = '',
+  initialTac = '',
+  initialCellId = ''
 }: CellTowerSearchProps) {
-  const [mcc, setMcc] = useState('');
-  const [mnc, setMnc] = useState('');
-  const [tacId, setTacId] = useState('');
-  const [cellId, setCellId] = useState('');
+  const [mcc, setMcc] = useState(initialMcc);
+  const [mnc, setMnc] = useState(initialMnc);
+  const [tacId, setTacId] = useState(initialTac);
+  const [cellId, setCellId] = useState(initialCellId);
   const [includeSurrounding, setIncludeSurrounding] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -39,6 +47,14 @@ export default function CellTowerSearch({
     return true;
   });
   const { logEvent } = useAnalytics();
+
+  // Update state when initial values change (for auto-populate)
+  React.useEffect(() => {
+    if (initialMcc) setMcc(initialMcc);
+    if (initialMnc) setMnc(initialMnc);
+    if (initialTac) setTacId(initialTac);
+    if (initialCellId) setCellId(initialCellId);
+  }, [initialMcc, initialMnc, initialTac, initialCellId]);
 
   const handleSearch = async () => {
     // Validate inputs
@@ -168,6 +184,7 @@ export default function CellTowerSearch({
         <div>
           <input
             type="text"
+            inputMode="numeric"
             value={mcc}
             onChange={(e) => setMcc(e.target.value.replace(/\D/g, '').slice(0, 3))}
             onKeyPress={handleKeyPress}
@@ -186,6 +203,7 @@ export default function CellTowerSearch({
         <div>
           <input
             type="text"
+            inputMode="numeric"
             value={mnc}
             onChange={(e) => setMnc(e.target.value.replace(/\D/g, '').slice(0, 3))}
             onKeyPress={handleKeyPress}
@@ -204,6 +222,7 @@ export default function CellTowerSearch({
         <div>
           <input
             type="text"
+            inputMode="numeric"
             value={tacId}
             onChange={(e) => setTacId(e.target.value.replace(/\D/g, '').slice(0, 5))}
             onKeyPress={handleKeyPress}
@@ -222,6 +241,7 @@ export default function CellTowerSearch({
         <div>
           <input
             type="text"
+            inputMode="numeric"
             value={cellId}
             onChange={(e) => setCellId(e.target.value.replace(/\D/g, ''))}
             onKeyPress={handleKeyPress}

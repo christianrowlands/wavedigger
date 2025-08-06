@@ -1,0 +1,21 @@
+<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left inner signal wave -->
+  <path d="M14.6,29.4l2.4,-2.4c-2,-2 -3,-4.6 -3,-7c0,-2.6 1,-5.2 3,-7L14.6,10.6c-2.6,2.6 -4,6 -4,9.4S12,26.8 14.6,29.4z" 
+        fill="currentColor"/>
+  
+  <!-- Right outer signal wave -->
+  <path d="M38.2,5.8l-2.4,2.4c3.2,3.2 4.8,7.6 4.8,11.8c0,4.2 -1.6,8.6 -4.8,11.8l2.4,2.4c4,-4 5.8,-9 5.8,-14.2C44,14.8 42,9.8 38.2,5.8z" 
+        fill="currentColor" opacity="0.8"/>
+  
+  <!-- Left outer signal wave -->
+  <path d="M12.2,8.2L9.8,5.8C6,9.8 4,14.8 4,20c0,5.2 2,10.2 5.8,14.2l2.4,-2.4c-3.2,-3.2 -4.8,-7.6 -4.8,-11.8C7.4,15.8 9,11.4 12.2,8.2z" 
+        fill="currentColor" opacity="0.8"/>
+  
+  <!-- Right inner signal wave -->
+  <path d="M33.4,29.4c2.6,-2.6 4,-6 4,-9.4c-0.2,-3.4 -1.4,-6.8 -4,-9.4l-2.4,2.4c2,2 3,4.4 3,7c0,2.6 -1,5.2 -3,7L33.4,29.4z" 
+        fill="currentColor"/>
+  
+  <!-- Tower and antenna structure -->
+  <path d="M29,20c0,-2.76 -2.24,-5 -5,-5S19,17.24 19,20c0,1.52 0.68,2.84 1.74,3.76L14,44h4l1.34,-4h9.34L30,44h4l-6.74,-20.24C28.32,22.84 29,21.52 29,20zM20.66,36L24,26l3.34,10H20.66z" 
+        fill="currentColor"/>
+</svg>

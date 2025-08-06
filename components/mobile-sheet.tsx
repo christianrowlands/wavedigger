@@ -5,11 +5,13 @@ import ShareButton from '@/components/share-button';
 import CopyButton from '@/components/copy-button';
 import { useShareUrl } from '@/hooks/use-share-url';
 import { formatBSSIDForDisplay } from '@/lib/bssid-utils';
+import { parseCellTowerInfo } from '@/lib/cell-tower-utils';
 import type { MapMarker, BSSIDSearchResult } from '@/types';
 
 interface MobileSheetProps {
   selectedMarker: MapMarker | null;
   searchHistory: BSSIDSearchResult[];
+  cellTowerSearchHistory?: BSSIDSearchResult[];
   children: React.ReactNode;
   onMarkerSelect: (marker: MapMarker) => void;
   activeTab?: 'bssid' | 'location' | 'celltower';
@@ -27,6 +29,7 @@ const SHEET_TOP_OFFSET = 80; // Space to leave for search UI
 export default function MobileSheet({ 
   selectedMarker, 
   searchHistory, 
+  cellTowerSearchHistory = [],
   children,
   onMarkerSelect,
   activeTab = 'bssid'
@@ -254,7 +257,7 @@ export default function MobileSheet({
             <div className="mb-4 p-3 rounded-lg glass-primary">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-semibold flex items-center gap-2">
-                  Selected BSSID
+                  {selectedMarker.type === 'cell' ? 'Selected Tower' : 'Selected BSSID'}
                   {selectedMarker.source === 'china' && (
                     <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
                       backgroundColor: '#EE1C25', 
@@ -276,34 +279,107 @@ export default function MobileSheet({
                 />
               </div>
               <div className="space-y-1 text-xs">
-                <div className="flex justify-between">
-                  <span style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono">{formatBSSIDForDisplay(selectedMarker.bssid)}</span>
-                    <CopyButton 
-                      text={formatBSSIDForDisplay(selectedMarker.bssid)} 
-                      label="BSSID" 
-                      size="sm"
-                      analyticsType="bssid"
-                      analyticsSource="mobile_sheet"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between">
-                  <span style={{ color: 'var(--text-tertiary)' }}>Location</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs">
-                      {selectedMarker.location.latitude.toFixed(6)}, {selectedMarker.location.longitude.toFixed(6)}
-                    </span>
-                    <CopyButton 
-                      text={`${selectedMarker.location.latitude.toFixed(6)}, ${selectedMarker.location.longitude.toFixed(6)}`} 
-                      label="Location" 
-                      size="sm"
-                      analyticsType="location"
-                      analyticsSource="mobile_sheet"
-                    />
-                  </div>
-                </div>
+                {selectedMarker.type === 'cell' ? (
+                  // Cell Tower formatting
+                  (() => {
+                    const towerInfo = parseCellTowerInfo(selectedMarker.bssid);
+                    if (!towerInfo) return null;
+                    return (
+                      <>
+                        <div className="flex justify-between">
+                          <span style={{ color: 'var(--text-tertiary)' }}>Carrier</span>
+                          <span className="font-medium">{towerInfo.carrier}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span style={{ color: 'var(--text-tertiary)' }}>MCC/MNC</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">{towerInfo.mcc}/{towerInfo.mnc}</span>
+                            <CopyButton 
+                              text={`${towerInfo.mcc}/${towerInfo.mnc}`} 
+                              label="MCC/MNC" 
+                              size="sm"
+                              analyticsType="location"
+                              analyticsSource="mobile_sheet"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-between">
+                          <span style={{ color: 'var(--text-tertiary)' }}>TAC</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">{towerInfo.tacId}</span>
+                            <CopyButton 
+                              text={towerInfo.tacId.toString()} 
+                              label="TAC" 
+                              size="sm"
+                              analyticsType="location"
+                              analyticsSource="mobile_sheet"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-between">
+                          <span style={{ color: 'var(--text-tertiary)' }}>Cell ID</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">{towerInfo.cellId}</span>
+                            <CopyButton 
+                              text={towerInfo.cellId.toString()} 
+                              label="Cell ID" 
+                              size="sm"
+                              analyticsType="location"
+                              analyticsSource="mobile_sheet"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-between pt-1 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                          <span style={{ color: 'var(--text-tertiary)' }}>Location</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs">
+                              {selectedMarker.location.latitude.toFixed(6)}, {selectedMarker.location.longitude.toFixed(6)}
+                            </span>
+                            <CopyButton 
+                              text={`${selectedMarker.location.latitude.toFixed(6)}, ${selectedMarker.location.longitude.toFixed(6)}`} 
+                              label="Location" 
+                              size="sm"
+                              analyticsType="location"
+                              analyticsSource="mobile_sheet"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()
+                ) : (
+                  // WiFi BSSID formatting
+                  <>
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--text-tertiary)' }}>BSSID</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">{formatBSSIDForDisplay(selectedMarker.bssid)}</span>
+                        <CopyButton 
+                          text={formatBSSIDForDisplay(selectedMarker.bssid)} 
+                          label="BSSID" 
+                          size="sm"
+                          analyticsType="bssid"
+                          analyticsSource="mobile_sheet"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--text-tertiary)' }}>Location</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs">
+                          {selectedMarker.location.latitude.toFixed(6)}, {selectedMarker.location.longitude.toFixed(6)}
+                        </span>
+                        <CopyButton 
+                          text={`${selectedMarker.location.latitude.toFixed(6)}, ${selectedMarker.location.longitude.toFixed(6)}`} 
+                          label="Location" 
+                          size="sm"
+                          analyticsType="location"
+                          analyticsSource="mobile_sheet"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
                 {selectedMarker.source === 'china' && (
                   <div className="flex justify-between pt-1 border-t" style={{ borderColor: 'var(--border-primary)' }}>
                     <span style={{ color: 'var(--text-tertiary)' }}>Source</span>
@@ -314,7 +390,7 @@ export default function MobileSheet({
             </div>
           )}
 
-          {/* Search History - Only when expanded and in BSSID mode */}
+          {/* Search History - BSSID mode */}
           {sheetState !== 'closed' && searchHistory.length > 0 && activeTab === 'bssid' && (
             <div className="mt-4 space-y-2">
               <h4 className="text-sm font-semibold mb-2">Search History</h4>
@@ -351,6 +427,54 @@ export default function MobileSheet({
                   </p>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Cell Tower Search History */}
+          {sheetState !== 'closed' && cellTowerSearchHistory.length > 0 && activeTab === 'celltower' && (
+            <div className="mt-4 space-y-2">
+              <h4 className="text-sm font-semibold mb-2">Tower Search History</h4>
+              {cellTowerSearchHistory.map((result, index) => {
+                const towerInfo = parseCellTowerInfo(result.bssid);
+                if (!towerInfo) return null;
+                return (
+                  <div
+                    key={`${result.bssid}-${index}`}
+                    className={`p-3 rounded-lg cursor-pointer card-hover glass-card text-xs ${
+                      selectedMarker?.bssid === result.bssid ? 'ring-2 ring-primary' : ''
+                    }`}
+                    onClick={() => {
+                      onMarkerSelect({
+                        id: `${result.bssid}-${Date.now()}`,
+                        bssid: result.bssid,
+                        position: [result.location.longitude, result.location.latitude],
+                        location: result.location,
+                        source: result.source,
+                        type: 'cell'
+                      });
+                    }}
+                  >
+                    <p className="font-medium flex items-center gap-2">
+                      {towerInfo.carrier}
+                      {result.source === 'china' && (
+                        <span className="text-xs font-normal px-1 py-0.5 rounded" style={{ 
+                          backgroundColor: '#EE1C25', 
+                          color: 'white',
+                          fontSize: '0.65rem'
+                        }}>
+                          CN
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                      MCC:{towerInfo.mcc} MNC:{towerInfo.mnc} TAC:{towerInfo.tacId} Cell:{towerInfo.cellId}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                      {result.location.latitude.toFixed(4)}, {result.location.longitude.toFixed(4)}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

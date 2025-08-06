@@ -41,6 +41,12 @@ function HomeContent() {
   const [activeTab, setActiveTab] = useState<'bssid' | 'location' | 'celltower'>('bssid');
   const [clickedLocation, setClickedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isLocationSearching, setIsLocationSearching] = useState(false);
+  const [selectedTowerParams, setSelectedTowerParams] = useState<{ 
+    mcc: string; 
+    mnc: string; 
+    tac: string; 
+    cellId: string; 
+  } | null>(null);
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -223,8 +229,19 @@ function HomeContent() {
     // Select the first tower (the searched one)
     if (newMarkers.length > 0) {
       setSelectedMarker(newMarkers[0]);
+      // Set tower params for auto-populate
+      const towerInfo = parseCellTowerInfo(newMarkers[0].bssid);
+      if (towerInfo) {
+        setSelectedTowerParams({
+          mcc: towerInfo.mcc.toString(),
+          mnc: towerInfo.mnc.toString(),
+          tac: towerInfo.tacId.toString(),
+          cellId: towerInfo.cellId.toString()
+        });
+      }
     } else {
       setSelectedMarker(null);
+      setSelectedTowerParams(null);
     }
     
     // Zoom to show all results
@@ -339,6 +356,21 @@ function HomeContent() {
 
   const handleMarkerClick = useCallback((marker: MapMarker) => {
     setSelectedMarker(marker);
+    
+    // If it's a cell tower, extract and set the tower parameters for auto-populate
+    if (marker.type === 'cell') {
+      const towerInfo = parseCellTowerInfo(marker.bssid);
+      if (towerInfo) {
+        setSelectedTowerParams({
+          mcc: towerInfo.mcc.toString(),
+          mnc: towerInfo.mnc.toString(),
+          tac: towerInfo.tacId.toString(),
+          cellId: towerInfo.cellId.toString()
+        });
+      }
+    } else {
+      setSelectedTowerParams(null);
+    }
   }, []);
 
   const handleMapClick = useCallback((longitude: number, latitude: number) => {
@@ -560,6 +592,7 @@ function HomeContent() {
               onLocationSearchEnd={() => setIsLocationSearching(false)}
               isLocationSearching={isLocationSearching}
               clickedLocation={clickedLocation}
+              selectedTowerParams={selectedTowerParams}
             />
 
             {/* Selected Marker Info */}
@@ -709,6 +742,20 @@ function HomeContent() {
                             longitude: marker.position[0],
                             latitude: marker.position[1]
                           });
+                          // Set tower params for auto-populate
+                          if (marker.type === 'cell') {
+                            const towerInfo = parseCellTowerInfo(marker.bssid);
+                            if (towerInfo) {
+                              setSelectedTowerParams({
+                                mcc: towerInfo.mcc.toString(),
+                                mnc: towerInfo.mnc.toString(),
+                                tac: towerInfo.tacId.toString(),
+                                cellId: towerInfo.cellId.toString()
+                              });
+                            }
+                          } else {
+                            setSelectedTowerParams(null);
+                          }
                         }
                       }}
                     >
@@ -778,6 +825,20 @@ function HomeContent() {
                             longitude: marker.position[0],
                             latitude: marker.position[1]
                           });
+                          // Set tower params for auto-populate
+                          if (marker.type === 'cell') {
+                            const towerInfo = parseCellTowerInfo(marker.bssid);
+                            if (towerInfo) {
+                              setSelectedTowerParams({
+                                mcc: towerInfo.mcc.toString(),
+                                mnc: towerInfo.mnc.toString(),
+                                tac: towerInfo.tacId.toString(),
+                                cellId: towerInfo.cellId.toString()
+                              });
+                            }
+                          } else {
+                            setSelectedTowerParams(null);
+                          }
                         }
                       }}
                     >
@@ -938,6 +999,7 @@ function HomeContent() {
                 onLocationSearchEnd={() => setIsLocationSearching(false)}
                 isLocationSearching={isLocationSearching}
                 clickedLocation={clickedLocation}
+                selectedTowerParams={selectedTowerParams}
               />
             </div>
           </div>
@@ -948,6 +1010,7 @@ function HomeContent() {
         <MobileSheet
           selectedMarker={selectedMarker}
           searchHistory={searchHistory}
+          cellTowerSearchHistory={cellTowerSearchHistory}
           activeTab={activeTab}
           onMarkerSelect={(marker) => {
             setSelectedMarker(marker);
@@ -955,11 +1018,27 @@ function HomeContent() {
               longitude: marker.position[0],
               latitude: marker.position[1]
             });
+            // Set tower params for auto-populate
+            if (marker.type === 'cell') {
+              const towerInfo = parseCellTowerInfo(marker.bssid);
+              if (towerInfo) {
+                setSelectedTowerParams({
+                  mcc: towerInfo.mcc.toString(),
+                  mnc: towerInfo.mnc.toString(),
+                  tac: towerInfo.tacId.toString(),
+                  cellId: towerInfo.cellId.toString()
+                });
+              }
+            } else {
+              setSelectedTowerParams(null);
+            }
           }}
         >
           <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
             {activeTab === 'bssid' 
               ? `${searchHistory.length} locations found`
+              : activeTab === 'celltower'
+              ? `${markers.length} towers`
               : `${markers.length} access points`
             }
           </div>

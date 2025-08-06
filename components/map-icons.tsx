@@ -185,150 +185,81 @@ export function createRouterIcon(
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-// Create a cell tower icon (based on Android vector drawable)
+// Create a cell tower icon from SVG file
 export function createCellTowerIcon(
   primaryColor: string,
   size: number = 48,
   isSelected: boolean = false
 ): string {
-  const viewBox = isSelected ? "0 0 72 72" : "0 0 48 48";
-  const scale = isSelected ? 3 : 2;
+  const scale = isSelected ? 1.5 : 1;
+  const actualSize = size * scale;
   
-  const svg = isSelected ? `
-    <svg width="${size}" height="${size}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
+  // Load the SVG and replace currentColor with the primary color
+  const svg = `
+    <svg width="${actualSize}" height="${actualSize}" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
       <!-- Left inner signal wave -->
-      <path d="M${7.3*scale},${14.7*scale}l${1.2*scale},-${1.2*scale}c-${1*scale},-${1*scale} -${1.5*scale},-${2.3*scale} -${1.5*scale},-${3.5*scale}c0,-${1.3*scale} ${0.5*scale},-${2.6*scale} ${1.5*scale},-${3.5*scale}L${7.3*scale},${5.3*scale}c-${1.3*scale},${1.3*scale} -${2*scale},${3*scale} -${2*scale},${4.7*scale}S${6*scale},${13.4*scale} ${7.3*scale},${14.7*scale}z" 
-            fill="${primaryColor}" opacity="0.7"/>
-      
-      <!-- Right outer signal wave -->
-      <path d="M${19.1*scale},${2.9*scale}l-${1.2*scale},${1.2*scale}c${1.6*scale},${1.6*scale} ${2.4*scale},${3.8*scale} ${2.4*scale},${5.9*scale}c0,${2.1*scale} -${0.8*scale},${4.3*scale} -${2.4*scale},${5.9*scale}l${1.2*scale},${1.2*scale}c${2*scale},-${2*scale} ${2.9*scale},-${4.5*scale} ${2.9*scale},-${7.1*scale}C${22*scale},${7.4*scale} ${21*scale},${4.9*scale} ${19.1*scale},${2.9*scale}z" 
-            fill="${primaryColor}" opacity="0.5"/>
-      
-      <!-- Left outer signal wave -->
-      <path d="M${6.1*scale},${4.1*scale}L${4.9*scale},${2.9*scale}C${3*scale},${4.9*scale} ${2*scale},${7.4*scale} ${2*scale},${10*scale}c0,${2.6*scale} ${1*scale},${5.1*scale} ${2.9*scale},${7.1*scale}l${1.2*scale},-${1.2*scale}c-${1.6*scale},-${1.6*scale} -${2.4*scale},-${3.8*scale} -${2.4*scale},-${5.9*scale}C${3.7*scale},${7.9*scale} ${4.5*scale},${5.7*scale} ${6.1*scale},${4.1*scale}z" 
-            fill="${primaryColor}" opacity="0.5"/>
-      
-      <!-- Right inner signal wave -->
-      <path d="M${16.7*scale},${14.7*scale}c${1.3*scale},-${1.3*scale} ${2*scale},-${3*scale} ${2*scale},-${4.7*scale}c-${0.1*scale},-${1.7*scale} -${0.7*scale},-${3.4*scale} -${2*scale},-${4.7*scale}l-${1.2*scale},${1.2*scale}c${1*scale},${1*scale} ${1.5*scale},${2.3*scale} ${1.5*scale},${3.5*scale}c0,${1.3*scale} -${0.5*scale},${2.6*scale} -${1.5*scale},${3.5*scale}L${16.7*scale},${14.7*scale}z" 
-            fill="${primaryColor}" opacity="0.7"/>
-      
-      <!-- Tower and antenna structure -->
-      <path d="M${14.5*scale},${10*scale}c0,-${1.38*scale} -${1.12*scale},-${2.5*scale} -${2.5*scale},-${2.5*scale}S${9.5*scale},${8.62*scale} ${9.5*scale},${10*scale}c0,${0.76*scale} ${0.34*scale},${1.42*scale} ${0.87*scale},${1.88*scale}L${7*scale},${22*scale}h${2*scale}l${0.67*scale},-${2*scale}h${4.67*scale}L${15*scale},${22*scale}h${2*scale}l-${3.37*scale},-${10.12*scale}C${14.16*scale},${11.42*scale} ${14.5*scale},${10.76*scale} ${14.5*scale},${10*scale}zM${10.33*scale},${18*scale}L${12*scale},${13*scale}l${1.67*scale},${5*scale}H${10.33*scale}z" 
+      <path d="M14.6,29.4l2.4,-2.4c-2,-2 -3,-4.6 -3,-7c0,-2.6 1,-5.2 3,-7L14.6,10.6c-2.6,2.6 -4,6 -4,9.4S12,26.8 14.6,29.4z" 
             fill="${primaryColor}"/>
-    </svg>
-  ` : `
-    <svg width="${size}" height="${size}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="tower-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:1" />
-          <stop offset="100%" style="stop-color:${primaryColor};stop-opacity:0.8" />
-        </linearGradient>
-        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.2"/>
-        </filter>
-      </defs>
-      
-      <!-- Left inner signal wave -->
-      <path d="M${7.3*scale},${14.7*scale}l${1.2*scale},-${1.2*scale}c-${1*scale},-${1*scale} -${1.5*scale},-${2.3*scale} -${1.5*scale},-${3.5*scale}c0,-${1.3*scale} ${0.5*scale},-${2.6*scale} ${1.5*scale},-${3.5*scale}L${7.3*scale},${5.3*scale}c-${1.3*scale},${1.3*scale} -${2*scale},${3*scale} -${2*scale},${4.7*scale}S${6*scale},${13.4*scale} ${7.3*scale},${14.7*scale}z" 
-            fill="url(#tower-gradient)" opacity="0.7" filter="url(#shadow)"/>
       
       <!-- Right outer signal wave -->
-      <path d="M${19.1*scale},${2.9*scale}l-${1.2*scale},${1.2*scale}c${1.6*scale},${1.6*scale} ${2.4*scale},${3.8*scale} ${2.4*scale},${5.9*scale}c0,${2.1*scale} -${0.8*scale},${4.3*scale} -${2.4*scale},${5.9*scale}l${1.2*scale},${1.2*scale}c${2*scale},-${2*scale} ${2.9*scale},-${4.5*scale} ${2.9*scale},-${7.1*scale}C${22*scale},${7.4*scale} ${21*scale},${4.9*scale} ${19.1*scale},${2.9*scale}z" 
-            fill="url(#tower-gradient)" opacity="0.5" filter="url(#shadow)"/>
+      <path d="M38.2,5.8l-2.4,2.4c3.2,3.2 4.8,7.6 4.8,11.8c0,4.2 -1.6,8.6 -4.8,11.8l2.4,2.4c4,-4 5.8,-9 5.8,-14.2C44,14.8 42,9.8 38.2,5.8z" 
+            fill="${primaryColor}" opacity="0.8"/>
       
       <!-- Left outer signal wave -->
-      <path d="M${6.1*scale},${4.1*scale}L${4.9*scale},${2.9*scale}C${3*scale},${4.9*scale} ${2*scale},${7.4*scale} ${2*scale},${10*scale}c0,${2.6*scale} ${1*scale},${5.1*scale} ${2.9*scale},${7.1*scale}l${1.2*scale},-${1.2*scale}c-${1.6*scale},-${1.6*scale} -${2.4*scale},-${3.8*scale} -${2.4*scale},-${5.9*scale}C${3.7*scale},${7.9*scale} ${4.5*scale},${5.7*scale} ${6.1*scale},${4.1*scale}z" 
-            fill="url(#tower-gradient)" opacity="0.5" filter="url(#shadow)"/>
+      <path d="M12.2,8.2L9.8,5.8C6,9.8 4,14.8 4,20c0,5.2 2,10.2 5.8,14.2l2.4,-2.4c-3.2,-3.2 -4.8,-7.6 -4.8,-11.8C7.4,15.8 9,11.4 12.2,8.2z" 
+            fill="${primaryColor}" opacity="0.8"/>
       
       <!-- Right inner signal wave -->
-      <path d="M${16.7*scale},${14.7*scale}c${1.3*scale},-${1.3*scale} ${2*scale},-${3*scale} ${2*scale},-${4.7*scale}c-${0.1*scale},-${1.7*scale} -${0.7*scale},-${3.4*scale} -${2*scale},-${4.7*scale}l-${1.2*scale},${1.2*scale}c${1*scale},${1*scale} ${1.5*scale},${2.3*scale} ${1.5*scale},${3.5*scale}c0,${1.3*scale} -${0.5*scale},${2.6*scale} -${1.5*scale},${3.5*scale}L${16.7*scale},${14.7*scale}z" 
-            fill="url(#tower-gradient)" opacity="0.7" filter="url(#shadow)"/>
+      <path d="M33.4,29.4c2.6,-2.6 4,-6 4,-9.4c-0.2,-3.4 -1.4,-6.8 -4,-9.4l-2.4,2.4c2,2 3,4.4 3,7c0,2.6 -1,5.2 -3,7L33.4,29.4z" 
+            fill="${primaryColor}"/>
       
       <!-- Tower and antenna structure -->
-      <path d="M${14.5*scale},${10*scale}c0,-${1.38*scale} -${1.12*scale},-${2.5*scale} -${2.5*scale},-${2.5*scale}S${9.5*scale},${8.62*scale} ${9.5*scale},${10*scale}c0,${0.76*scale} ${0.34*scale},${1.42*scale} ${0.87*scale},${1.88*scale}L${7*scale},${22*scale}h${2*scale}l${0.67*scale},-${2*scale}h${4.67*scale}L${15*scale},${22*scale}h${2*scale}l-${3.37*scale},-${10.12*scale}C${14.16*scale},${11.42*scale} ${14.5*scale},${10.76*scale} ${14.5*scale},${10*scale}zM${10.33*scale},${18*scale}L${12*scale},${13*scale}l${1.67*scale},${5*scale}H${10.33*scale}z" 
-            fill="url(#tower-gradient)" filter="url(#shadow)"/>
+      <path d="M29,20c0,-2.76 -2.24,-5 -5,-5S19,17.24 19,20c0,1.52 0.68,2.84 1.74,3.76L14,44h4l1.34,-4h9.34L30,44h4l-6.74,-20.24C28.32,22.84 29,21.52 29,20zM20.66,36L24,26l3.34,10H20.66z" 
+            fill="${primaryColor}"/>
     </svg>
   `;
   
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-// Create a cell tower icon with China indicator (based on Android vector drawable)
+// Create a cell tower icon with China indicator from SVG file
 export function createCellTowerIconChina(
   primaryColor: string,
   size: number = 48,
   isSelected: boolean = false
 ): string {
-  const viewBox = isSelected ? "0 0 72 72" : "0 0 48 48";
-  const scale = isSelected ? 3 : 2;
+  const scale = isSelected ? 1.5 : 1;
+  const actualSize = size * scale;
+  const flagSize = isSelected ? 12 : 8;
   const flagX = isSelected ? 45 : 30;
   const flagY = isSelected ? 4.5 : 3;
-  const flagSize = isSelected ? 12 : 8;
   
-  const svg = isSelected ? `
-    <svg width="${size}" height="${size}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
+  const svg = `
+    <svg width="${actualSize}" height="${actualSize}" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
       <!-- Left inner signal wave -->
-      <path d="M${7.3*scale},${14.7*scale}l${1.2*scale},-${1.2*scale}c-${1*scale},-${1*scale} -${1.5*scale},-${2.3*scale} -${1.5*scale},-${3.5*scale}c0,-${1.3*scale} ${0.5*scale},-${2.6*scale} ${1.5*scale},-${3.5*scale}L${7.3*scale},${5.3*scale}c-${1.3*scale},${1.3*scale} -${2*scale},${3*scale} -${2*scale},${4.7*scale}S${6*scale},${13.4*scale} ${7.3*scale},${14.7*scale}z" 
-            fill="${primaryColor}" opacity="0.7"/>
+      <path d="M14.6,29.4l2.4,-2.4c-2,-2 -3,-4.6 -3,-7c0,-2.6 1,-5.2 3,-7L14.6,10.6c-2.6,2.6 -4,6 -4,9.4S12,26.8 14.6,29.4z" 
+            fill="${primaryColor}"/>
       
       <!-- Right outer signal wave -->
-      <path d="M${19.1*scale},${2.9*scale}l-${1.2*scale},${1.2*scale}c${1.6*scale},${1.6*scale} ${2.4*scale},${3.8*scale} ${2.4*scale},${5.9*scale}c0,${2.1*scale} -${0.8*scale},${4.3*scale} -${2.4*scale},${5.9*scale}l${1.2*scale},${1.2*scale}c${2*scale},-${2*scale} ${2.9*scale},-${4.5*scale} ${2.9*scale},-${7.1*scale}C${22*scale},${7.4*scale} ${21*scale},${4.9*scale} ${19.1*scale},${2.9*scale}z" 
-            fill="${primaryColor}" opacity="0.5"/>
+      <path d="M38.2,5.8l-2.4,2.4c3.2,3.2 4.8,7.6 4.8,11.8c0,4.2 -1.6,8.6 -4.8,11.8l2.4,2.4c4,-4 5.8,-9 5.8,-14.2C44,14.8 42,9.8 38.2,5.8z" 
+            fill="${primaryColor}" opacity="0.8"/>
       
       <!-- Left outer signal wave -->
-      <path d="M${6.1*scale},${4.1*scale}L${4.9*scale},${2.9*scale}C${3*scale},${4.9*scale} ${2*scale},${7.4*scale} ${2*scale},${10*scale}c0,${2.6*scale} ${1*scale},${5.1*scale} ${2.9*scale},${7.1*scale}l${1.2*scale},-${1.2*scale}c-${1.6*scale},-${1.6*scale} -${2.4*scale},-${3.8*scale} -${2.4*scale},-${5.9*scale}C${3.7*scale},${7.9*scale} ${4.5*scale},${5.7*scale} ${6.1*scale},${4.1*scale}z" 
-            fill="${primaryColor}" opacity="0.5"/>
+      <path d="M12.2,8.2L9.8,5.8C6,9.8 4,14.8 4,20c0,5.2 2,10.2 5.8,14.2l2.4,-2.4c-3.2,-3.2 -4.8,-7.6 -4.8,-11.8C7.4,15.8 9,11.4 12.2,8.2z" 
+            fill="${primaryColor}" opacity="0.8"/>
       
       <!-- Right inner signal wave -->
-      <path d="M${16.7*scale},${14.7*scale}c${1.3*scale},-${1.3*scale} ${2*scale},-${3*scale} ${2*scale},-${4.7*scale}c-${0.1*scale},-${1.7*scale} -${0.7*scale},-${3.4*scale} -${2*scale},-${4.7*scale}l-${1.2*scale},${1.2*scale}c${1*scale},${1*scale} ${1.5*scale},${2.3*scale} ${1.5*scale},${3.5*scale}c0,${1.3*scale} -${0.5*scale},${2.6*scale} -${1.5*scale},${3.5*scale}L${16.7*scale},${14.7*scale}z" 
-            fill="${primaryColor}" opacity="0.7"/>
+      <path d="M33.4,29.4c2.6,-2.6 4,-6 4,-9.4c-0.2,-3.4 -1.4,-6.8 -4,-9.4l-2.4,2.4c2,2 3,4.4 3,7c0,2.6 -1,5.2 -3,7L33.4,29.4z" 
+            fill="${primaryColor}"/>
       
       <!-- Tower and antenna structure -->
-      <path d="M${14.5*scale},${10*scale}c0,-${1.38*scale} -${1.12*scale},-${2.5*scale} -${2.5*scale},-${2.5*scale}S${9.5*scale},${8.62*scale} ${9.5*scale},${10*scale}c0,${0.76*scale} ${0.34*scale},${1.42*scale} ${0.87*scale},${1.88*scale}L${7*scale},${22*scale}h${2*scale}l${0.67*scale},-${2*scale}h${4.67*scale}L${15*scale},${22*scale}h${2*scale}l-${3.37*scale},-${10.12*scale}C${14.16*scale},${11.42*scale} ${14.5*scale},${10.76*scale} ${14.5*scale},${10*scale}zM${10.33*scale},${18*scale}L${12*scale},${13*scale}l${1.67*scale},${5*scale}H${10.33*scale}z" 
+      <path d="M29,20c0,-2.76 -2.24,-5 -5,-5S19,17.24 19,20c0,1.52 0.68,2.84 1.74,3.76L14,44h4l1.34,-4h9.34L30,44h4l-6.74,-20.24C28.32,22.84 29,21.52 29,20zM20.66,36L24,26l3.34,10H20.66z" 
             fill="${primaryColor}"/>
       
       <!-- China flag indicator -->
       <g transform="translate(${flagX}, ${flagY})">
         <circle cx="${flagSize}" cy="${flagSize}" r="${flagSize}" fill="#EE1C25" stroke="white" stroke-width="1.5"/>
         <text x="${flagSize}" y="${flagSize + 6}" text-anchor="middle" font-size="${isSelected ? 15 : 10}" font-weight="bold" fill="white">CN</text>
-      </g>
-    </svg>
-  ` : `
-    <svg width="${size}" height="${size}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="tower-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" style="stop-color:${primaryColor};stop-opacity:1" />
-          <stop offset="100%" style="stop-color:${primaryColor};stop-opacity:0.8" />
-        </linearGradient>
-        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.2"/>
-        </filter>
-      </defs>
-      
-      <!-- Left inner signal wave -->
-      <path d="M${7.3*scale},${14.7*scale}l${1.2*scale},-${1.2*scale}c-${1*scale},-${1*scale} -${1.5*scale},-${2.3*scale} -${1.5*scale},-${3.5*scale}c0,-${1.3*scale} ${0.5*scale},-${2.6*scale} ${1.5*scale},-${3.5*scale}L${7.3*scale},${5.3*scale}c-${1.3*scale},${1.3*scale} -${2*scale},${3*scale} -${2*scale},${4.7*scale}S${6*scale},${13.4*scale} ${7.3*scale},${14.7*scale}z" 
-            fill="url(#tower-gradient)" opacity="0.7" filter="url(#shadow)"/>
-      
-      <!-- Right outer signal wave -->
-      <path d="M${19.1*scale},${2.9*scale}l-${1.2*scale},${1.2*scale}c${1.6*scale},${1.6*scale} ${2.4*scale},${3.8*scale} ${2.4*scale},${5.9*scale}c0,${2.1*scale} -${0.8*scale},${4.3*scale} -${2.4*scale},${5.9*scale}l${1.2*scale},${1.2*scale}c${2*scale},-${2*scale} ${2.9*scale},-${4.5*scale} ${2.9*scale},-${7.1*scale}C${22*scale},${7.4*scale} ${21*scale},${4.9*scale} ${19.1*scale},${2.9*scale}z" 
-            fill="url(#tower-gradient)" opacity="0.5" filter="url(#shadow)"/>
-      
-      <!-- Left outer signal wave -->
-      <path d="M${6.1*scale},${4.1*scale}L${4.9*scale},${2.9*scale}C${3*scale},${4.9*scale} ${2*scale},${7.4*scale} ${2*scale},${10*scale}c0,${2.6*scale} ${1*scale},${5.1*scale} ${2.9*scale},${7.1*scale}l${1.2*scale},-${1.2*scale}c-${1.6*scale},-${1.6*scale} -${2.4*scale},-${3.8*scale} -${2.4*scale},-${5.9*scale}C${3.7*scale},${7.9*scale} ${4.5*scale},${5.7*scale} ${6.1*scale},${4.1*scale}z" 
-            fill="url(#tower-gradient)" opacity="0.5" filter="url(#shadow)"/>
-      
-      <!-- Right inner signal wave -->
-      <path d="M${16.7*scale},${14.7*scale}c${1.3*scale},-${1.3*scale} ${2*scale},-${3*scale} ${2*scale},-${4.7*scale}c-${0.1*scale},-${1.7*scale} -${0.7*scale},-${3.4*scale} -${2*scale},-${4.7*scale}l-${1.2*scale},${1.2*scale}c${1*scale},${1*scale} ${1.5*scale},${2.3*scale} ${1.5*scale},${3.5*scale}c0,${1.3*scale} -${0.5*scale},${2.6*scale} -${1.5*scale},${3.5*scale}L${16.7*scale},${14.7*scale}z" 
-            fill="url(#tower-gradient)" opacity="0.7" filter="url(#shadow)"/>
-      
-      <!-- Tower and antenna structure -->
-      <path d="M${14.5*scale},${10*scale}c0,-${1.38*scale} -${1.12*scale},-${2.5*scale} -${2.5*scale},-${2.5*scale}S${9.5*scale},${8.62*scale} ${9.5*scale},${10*scale}c0,${0.76*scale} ${0.34*scale},${1.42*scale} ${0.87*scale},${1.88*scale}L${7*scale},${22*scale}h${2*scale}l${0.67*scale},-${2*scale}h${4.67*scale}L${15*scale},${22*scale}h${2*scale}l-${3.37*scale},-${10.12*scale}C${14.16*scale},${11.42*scale} ${14.5*scale},${10.76*scale} ${14.5*scale},${10*scale}zM${10.33*scale},${18*scale}L${12*scale},${13*scale}l${1.67*scale},${5*scale}H${10.33*scale}z" 
-            fill="url(#tower-gradient)" filter="url(#shadow)"/>
-      
-      <!-- China flag indicator -->
-      <g transform="translate(30, 3)">
-        <circle cx="8" cy="8" r="8" fill="#EE1C25" stroke="white" stroke-width="1"/>
-        <text x="8" y="12" text-anchor="middle" font-size="10" font-weight="bold" fill="white">CN</text>
       </g>
     </svg>
   `;

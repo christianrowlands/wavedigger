@@ -80,10 +80,12 @@ export default function AboutDialog() {
 
           <section>
             <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Coming Soon
+              Cell Tower Search
             </h3>
             <p>
-              Cell tower location tracking support is planned for a future update.
+              WaveDigger also supports finding the location of LTE cell towers. Enter the 
+              MCC, MNC, TAC, and Cell ID to locate a tower. Note that only LTE towers are 
+              supported - 5G NR, UMTS, and GSM towers are not available through this service.
             </p>
           </section>
 

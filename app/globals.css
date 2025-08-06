@@ -166,8 +166,8 @@
   --gradient-card-3: linear-gradient(135deg, var(--color-accent-100), var(--color-accent-50));
   --glass-background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(243, 240, 255, 0.85) 50%, rgba(240, 248, 255, 0.85) 100%);
   --glass-border: rgba(147, 129, 255, 0.2);
-  --icon-gradient-start: #9381FF;
-  --icon-gradient-end: #C7A3FF;
+  --icon-gradient-start: #B8ADFF;
+  --icon-gradient-end: #D4C5FF;
   --icon-hover-gradient-start: #22D3EE;
   --icon-hover-gradient-end: #5EEAD4;
   
@@ -311,8 +311,8 @@ html {
   --gradient-card-3: var(--color-gray-800);
   --glass-background: rgba(17, 25, 40, 0.75);
   --glass-border: rgba(255, 255, 255, 0.125);
-  --icon-gradient-start: #6366F1;
-  --icon-gradient-end: #8B5CF6;
+  --icon-gradient-start: #A5B4FC;
+  --icon-gradient-end: #C4B5FD;
   --icon-hover-gradient-start: #06B6D4;
   --icon-hover-gradient-end: #10B981;
 }

@@ -27,6 +27,7 @@ interface SearchControlsProps {
   onLocationSearchEnd?: () => void;
   isLocationSearching?: boolean;
   clickedLocation?: { latitude: number; longitude: number } | null;
+  selectedTowerParams?: { mcc: string; mnc: string; tac: string; cellId: string } | null;
 }
 
 export default function SearchControls({
@@ -45,7 +46,8 @@ export default function SearchControls({
   onLocationSearchStart,
   onLocationSearchEnd,
   isLocationSearching = false,
-  clickedLocation
+  clickedLocation,
+  selectedTowerParams
 }: SearchControlsProps) {
   const { trackTabSwitch } = useAnalytics();
   
@@ -167,6 +169,10 @@ export default function SearchControls({
                 onSearchResults(bssidResults);
               })}
               compact={true}
+              initialMcc={selectedTowerParams?.mcc || ''}
+              initialMnc={selectedTowerParams?.mnc || ''}
+              initialTac={selectedTowerParams?.tac || ''}
+              initialCellId={selectedTowerParams?.cellId || ''}
             />
           </div>
         ) : activeTab === 'location' ? (
@@ -338,6 +344,10 @@ export default function SearchControls({
                 } as BSSIDSearchResult));
                 onSearchResults(bssidResults);
               })}
+              initialMcc={selectedTowerParams?.mcc || ''}
+              initialMnc={selectedTowerParams?.mnc || ''}
+              initialTac={selectedTowerParams?.tac || ''}
+              initialCellId={selectedTowerParams?.cellId || ''}
             />
           </div>
         </TabsContent>
