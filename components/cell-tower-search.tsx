@@ -6,6 +6,7 @@ import type { CellTowerSearchResult, SearchError } from '@/types';
 import { validateCellTowerParams, COMMON_CARRIERS } from '@/lib/cell-tower-utils';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { AnalyticsEvents } from '@/lib/analytics';
+import { useToast } from '@/components/toast-provider';
 
 interface CellTowerSearchProps {
   onSearchResults: (results: CellTowerSearchResult[], searchParams?: {
@@ -40,6 +41,7 @@ export default function CellTowerSearch({
   const [isSearching, setIsSearching] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [showLteWarning, setShowLteWarning] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('hideLteWarning') !== 'true';
@@ -47,6 +49,7 @@ export default function CellTowerSearch({
     return true;
   });
   const { logEvent } = useAnalytics();
+  const { showToast } = useToast();
 
   // Update state when initial values change (for auto-populate)
   React.useEffect(() => {
@@ -57,6 +60,9 @@ export default function CellTowerSearch({
   }, [initialMcc, initialMnc, initialTac, initialCellId]);
 
   const handleSearch = async () => {
+    // Clear previous errors
+    setSearchError(null);
+    
     // Validate inputs
     const validation = validateCellTowerParams(mcc, mnc, cellId, tacId);
     if (!validation.isValid) {
@@ -81,12 +87,31 @@ export default function CellTowerSearch({
       
       if (!response.ok) {
         if (data.error) {
-          onError?.(data.error);
+          const error = data.error as SearchError;
+          
+          // Show appropriate error message based on error type
+          if (error.type === 'NOT_FOUND') {
+            const errorMsg = `Tower not found in Apple's database (MCC: ${mcc}, MNC: ${mnc}, TAC: ${tacId}, Cell ID: ${cellId})`;
+            setSearchError(errorMsg);
+            showToast(errorMsg, 'error');
+          } else if (error.type === 'RATE_LIMITED') {
+            const errorMsg = 'Too many requests. Please wait a moment and try again.';
+            setSearchError(errorMsg);
+            showToast(errorMsg, 'error');
+          } else {
+            setSearchError(error.message);
+            showToast(error.message, 'error');
+          }
+          
+          onError?.(error);
         }
         return;
       }
       
       if (data.results && data.results.length > 0) {
+        // Clear any previous errors on successful search
+        setSearchError(null);
+        
         onSearchResults(data.results, {
           mcc: parseInt(mcc, 10),
           mnc: parseInt(mnc, 10),
@@ -94,9 +119,24 @@ export default function CellTowerSearch({
           cellId: parseInt(cellId, 10),
           returnAll: includeSurrounding
         });
+        
+        // Show success message
+        const foundCount = data.results.length;
+        const message = includeSurrounding 
+          ? `Found ${foundCount} tower${foundCount > 1 ? 's' : ''} in the area`
+          : `Tower found successfully`;
+        showToast(message, 'success');
+      } else {
+        // This shouldn't happen if API is working correctly, but handle it
+        const errorMsg = 'No towers found in the response';
+        setSearchError(errorMsg);
+        showToast(errorMsg, 'error');
       }
     } catch (error) {
       console.error('Cell tower search error:', error);
+      const errorMsg = 'Network error. Please check your connection and try again.';
+      setSearchError(errorMsg);
+      showToast(errorMsg, 'error');
       onError?.({
         type: 'NETWORK_ERROR',
         message: 'Failed to search for cell tower. Please try again.'
@@ -186,7 +226,10 @@ export default function CellTowerSearch({
             type="text"
             inputMode="numeric"
             value={mcc}
-            onChange={(e) => setMcc(e.target.value.replace(/\D/g, '').slice(0, 3))}
+            onChange={(e) => {
+              setMcc(e.target.value.replace(/\D/g, '').slice(0, 3));
+              setSearchError(null); // Clear error when user types
+            }}
             onKeyPress={handleKeyPress}
             placeholder="MCC (e.g., 310)"
             className={inputClass}
@@ -205,7 +248,10 @@ export default function CellTowerSearch({
             type="text"
             inputMode="numeric"
             value={mnc}
-            onChange={(e) => setMnc(e.target.value.replace(/\D/g, '').slice(0, 3))}
+            onChange={(e) => {
+              setMnc(e.target.value.replace(/\D/g, '').slice(0, 3));
+              setSearchError(null); // Clear error when user types
+            }}
             onKeyPress={handleKeyPress}
             placeholder="MNC (e.g., 260)"
             className={inputClass}
@@ -224,7 +270,10 @@ export default function CellTowerSearch({
             type="text"
             inputMode="numeric"
             value={tacId}
-            onChange={(e) => setTacId(e.target.value.replace(/\D/g, '').slice(0, 5))}
+            onChange={(e) => {
+              setTacId(e.target.value.replace(/\D/g, '').slice(0, 5));
+              setSearchError(null); // Clear error when user types
+            }}
             onKeyPress={handleKeyPress}
             placeholder="TAC"
             className={inputClass}
@@ -243,7 +292,10 @@ export default function CellTowerSearch({
             type="text"
             inputMode="numeric"
             value={cellId}
-            onChange={(e) => setCellId(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => {
+              setCellId(e.target.value.replace(/\D/g, ''));
+              setSearchError(null); // Clear error when user types
+            }}
             onKeyPress={handleKeyPress}
             placeholder="Cell ID"
             className={inputClass}
@@ -282,8 +334,21 @@ export default function CellTowerSearch({
         )}
       </div>
 
+      {/* Search Error - Display NOT_FOUND and other errors */}
+      {searchError && (
+        <div className="flex items-start gap-2 p-2 rounded-lg animate-fadeIn" style={{ 
+          backgroundColor: 'var(--color-error-light)',
+          border: '1px solid var(--color-error)'
+        }}>
+          <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-error)' }} />
+          <div className="text-xs" style={{ color: 'var(--color-error-dark)' }}>
+            {searchError}
+          </div>
+        </div>
+      )}
+
       {/* Validation Errors */}
-      {validationErrors.length > 0 && (
+      {validationErrors.length > 0 && !searchError && (
         <div className="flex items-start gap-2 p-2 rounded-lg" style={{ 
           backgroundColor: 'var(--color-error-light)',
           border: '1px solid var(--color-error)'

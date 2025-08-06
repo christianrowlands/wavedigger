@@ -13,7 +13,7 @@ export interface BSSIDSearchResult {
 }
 
 export interface SearchError {
-  type: 'NOT_FOUND' | 'INVALID_BSSID' | 'API_ERROR' | 'NETWORK_ERROR' | 'INVALID_LOCATION' | 'INVALID_REQUEST';
+  type: 'NOT_FOUND' | 'INVALID_BSSID' | 'API_ERROR' | 'NETWORK_ERROR' | 'INVALID_LOCATION' | 'INVALID_REQUEST' | 'RATE_LIMITED';
   message: string;
 }
 
