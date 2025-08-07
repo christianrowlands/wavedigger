@@ -30,6 +30,7 @@ interface CellTowerSearchProps {
   initialTac?: string;
   initialCellId?: string;
   isActive?: boolean;
+  shouldStartCollapsed?: boolean;
 }
 
 export default function CellTowerSearch({ 
@@ -40,7 +41,8 @@ export default function CellTowerSearch({
   initialMnc = '',
   initialTac = '',
   initialCellId = '',
-  isActive = true
+  isActive = true,
+  shouldStartCollapsed = false
 }: CellTowerSearchProps) {
   const [mcc, setMcc] = useState(initialMcc);
   const [mnc, setMnc] = useState(initialMnc);
@@ -75,6 +77,25 @@ export default function CellTowerSearch({
       setIsCollapsed(false);
     }
   }, [isActive, isCollapsed]);
+
+  // Handle starting collapsed when loaded from URL
+  useEffect(() => {
+    if (shouldStartCollapsed && compact && !isCollapsed) {
+      // Only collapse if we have the initial values (meaning results were loaded)
+      if (initialMcc && initialMnc && initialTac && initialCellId) {
+        setIsCollapsed(true);
+        // Set last search params for the collapsed view
+        const carrier = COMMON_CARRIERS.find(c => c.mcc === parseInt(initialMcc, 10) && c.mnc === parseInt(initialMnc, 10));
+        setLastSearchParams({
+          mcc: initialMcc,
+          mnc: initialMnc,
+          tac: initialTac,
+          cellId: initialCellId,
+          carrier: carrier?.name
+        });
+      }
+    }
+  }, [shouldStartCollapsed, compact, initialMcc, initialMnc, initialTac, initialCellId, isCollapsed]);
 
 
   const handleSearch = async () => {

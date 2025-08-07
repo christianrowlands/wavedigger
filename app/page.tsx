@@ -48,6 +48,7 @@ function HomeContent() {
     cellId: string; 
   } | null>(null);
   const [shouldCloseSheet, setShouldCloseSheet] = useState(false);
+  const [hasUrlLoadedTowerResults, setHasUrlLoadedTowerResults] = useState(false);
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -384,6 +385,10 @@ function HomeContent() {
   const handleTabChange = useCallback((tab: 'bssid' | 'location' | 'celltower') => {
     setActiveTab(tab);
     updateUrl({ tab });
+    // Reset URL-loaded tower results flag when changing tabs
+    if (tab !== 'celltower') {
+      setHasUrlLoadedTowerResults(false);
+    }
   }, [updateUrl]);
 
   const handleClearAll = () => {
@@ -396,6 +401,8 @@ function HomeContent() {
     setCellTowerSearchHistory([]);
     // Close the mobile sheet since there's no content
     setShouldCloseSheet(true);
+    // Reset URL-loaded tower results flag
+    setHasUrlLoadedTowerResults(false);
     // Clear URL parameters when clearing all
     router.push('/');
   };
@@ -454,6 +461,8 @@ function HomeContent() {
             
             // Set tab to cell tower if not already set
             setActiveTab('celltower');
+            // Mark that we loaded tower results from URL
+            setHasUrlLoadedTowerResults(true);
           }
         } catch (error) {
           console.error('Error loading shared cell tower:', error);
@@ -596,6 +605,7 @@ function HomeContent() {
               isLocationSearching={isLocationSearching}
               clickedLocation={clickedLocation}
               selectedTowerParams={selectedTowerParams}
+              hasUrlLoadedTowerResults={hasUrlLoadedTowerResults}
             />
 
             {/* Selected Marker Info */}
@@ -1035,6 +1045,7 @@ function HomeContent() {
                 isLocationSearching={isLocationSearching}
                 clickedLocation={clickedLocation}
                 selectedTowerParams={selectedTowerParams}
+                hasUrlLoadedTowerResults={hasUrlLoadedTowerResults}
               />
             </div>
           </div>

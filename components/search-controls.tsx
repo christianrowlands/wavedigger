@@ -28,6 +28,7 @@ interface SearchControlsProps {
   isLocationSearching?: boolean;
   clickedLocation?: { latitude: number; longitude: number } | null;
   selectedTowerParams?: { mcc: string; mnc: string; tac: string; cellId: string } | null;
+  hasUrlLoadedTowerResults?: boolean;
 }
 
 export default function SearchControls({
@@ -47,7 +48,8 @@ export default function SearchControls({
   onLocationSearchEnd,
   isLocationSearching = false,
   clickedLocation,
-  selectedTowerParams
+  selectedTowerParams,
+  hasUrlLoadedTowerResults = false
 }: SearchControlsProps) {
   const { trackTabSwitch } = useAnalytics();
   
@@ -174,6 +176,7 @@ export default function SearchControls({
               initialTac={selectedTowerParams?.tac || ''}
               initialCellId={selectedTowerParams?.cellId || ''}
               isActive={activeTab === 'celltower'}
+              shouldStartCollapsed={hasUrlLoadedTowerResults}
             />
           </div>
         ) : activeTab === 'location' ? (
@@ -350,6 +353,7 @@ export default function SearchControls({
               initialTac={selectedTowerParams?.tac || ''}
               initialCellId={selectedTowerParams?.cellId || ''}
               isActive={activeTab === 'celltower'}
+              shouldStartCollapsed={hasUrlLoadedTowerResults}
             />
           </div>
         </TabsContent>
