@@ -65,7 +65,7 @@ export default function AboutDialog() {
               This app queries Apple&apos;s location services database, which contains locations of 
               millions of Wi-Fi access points and cell towers worldwide. These locations are 
               crowdsourced from iOS devices that have location services enabled. If a network 
-              isn&apos;t found in the global database, it automatically checks the Apple's China database.
+              isn&apos;t found in the global database, it automatically checks the Apple&apos;s China database.
             </p>
           </section>
 
