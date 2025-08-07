@@ -536,7 +536,7 @@ export default function MapView({
       
       {/* Map Style Selector */}
       {mapboxToken && (
-        <div className="absolute top-20 lg:top-4 left-4 z-10">
+        <div className="absolute bottom-24 right-4 lg:top-4 lg:bottom-auto lg:right-auto lg:left-4 z-20">
           <div className="relative map-style-selector">
             <button
               onClick={() => setShowStyleMenu(!showStyleMenu)}
@@ -558,7 +558,7 @@ export default function MapView({
             
             {showStyleMenu && (
               <div 
-                className="absolute top-full left-0 mt-2 glass-card rounded-lg overflow-hidden animate-fadeIn"
+                className="absolute bottom-full right-0 left-auto lg:bottom-auto lg:top-full lg:left-0 lg:right-auto mb-2 lg:mb-0 lg:mt-2 glass-card rounded-lg overflow-hidden animate-fadeIn z-[35]"
                 style={{
                   background: 'var(--bg-secondary)',
                   border: '1px solid var(--border-primary)',

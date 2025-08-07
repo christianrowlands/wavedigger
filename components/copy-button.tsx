@@ -105,12 +105,12 @@ export default function CopyButton({
   }, [text, label, showToast, fallbackCopyToClipboard, analyticsType, analyticsSource, trackCopyAction]);
   
   const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4';
-  const padding = size === 'sm' ? 'p-1' : 'p-1.5';
+  const buttonSize = size === 'sm' ? 'h-5 w-5' : 'h-6 w-6';
   
   return (
     <button
       onClick={handleCopy}
-      className={`${padding} rounded transition-all hover:scale-110 glass-card ${className}`}
+      className={`${buttonSize} rounded transition-all hover:scale-110 glass-card flex items-center justify-center ${className}`}
       title={`Copy ${label.toLowerCase()}`}
       style={{ 
         color: copied ? 'var(--color-success)' : 'var(--text-tertiary)',
