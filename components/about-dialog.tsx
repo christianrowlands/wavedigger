@@ -34,11 +34,27 @@ export default function AboutDialog() {
             <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
               What does this do?
             </h3>
-            <p>
-              WaveDigger finds the physical location of Wi-Fi access points using their BSSID 
-              (MAC address). Enter any BSSID and if it&apos;s in the database, you&apos;ll see its 
-              approximate location on the map.
+            <p className="mb-2">
+              WaveDigger helps you find the physical location of wireless networks:
             </p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li><strong>Wi-Fi Access Points:</strong> Look up any router or access point using its BSSID (MAC address)</li>
+              <li><strong>LTE Cell Towers:</strong> Find cell tower locations using network identifiers (MCC, MNC, TAC, Cell ID)</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              Key Features
+            </h3>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Single or batch BSSID searches</li>
+              <li>Include surrounding access points option (find entire buildings/areas)</li>
+              <li>LTE cell tower location lookup</li>
+              <li>Location-based Access Point discovery</li>
+              <li>Search history with China database indicators</li>
+              <li>Shareable URLs for specific locations</li>
+            </ul>
           </section>
 
           <section>
@@ -47,9 +63,35 @@ export default function AboutDialog() {
             </h3>
             <p>
               This app queries Apple&apos;s location services database, which contains locations of 
-              millions of Wi-Fi access points worldwide. These locations are crowdsourced from 
-              iOS devices that have location services enabled.
+              millions of Wi-Fi access points and cell towers worldwide. These locations are 
+              crowdsourced from iOS devices that have location services enabled. If a network 
+              isn&apos;t found in the global database, it automatically checks the Apple's China database.
             </p>
+          </section>
+
+          <section>
+            <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              Input Formats
+            </h3>
+            <div className="space-y-2">
+              <div>
+                <p className="font-medium">Wi-Fi BSSID formats:</p>
+                <ul className="list-disc list-inside space-y-1 font-mono text-xs mt-1 ml-2">
+                  <li>AA:BB:CC:DD:EE:FF</li>
+                  <li>AA-BB-CC-DD-EE-FF</li>
+                  <li>AABBCCDDEEFF</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-medium">Cell Tower requires all 4 values:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs mt-1 ml-2">
+                  <li>MCC: Mobile Country Code (e.g., 310 for USA)</li>
+                  <li>MNC: Mobile Network Code (e.g., 410 for AT&T)</li>
+                  <li>TAC: Tracking Area Code</li>
+                  <li>Cell ID: Cell Tower Identifier</li>
+                </ul>
+              </div>
+            </div>
           </section>
 
           <section>
@@ -57,36 +99,12 @@ export default function AboutDialog() {
               Limitations
             </h3>
             <ul className="list-disc list-inside space-y-1">
-              <li>Not all Wi-Fi access points are in the database</li>
+              <li>Not all networks are in the database</li>
               <li>New or recently moved devices may not be found</li>
-              <li>Private or enterprise networks might be excluded</li>
-              <li>Location accuracy varies (typically within 50-100 meters)</li>
+              <li>Only LTE towers supported (no 5G NR, UMTS, or GSM)</li>
+              <li>Location accuracy varies (typically 50-100m for Wi-Fi, 100-500m for cell towers)</li>
+              <li>Location search limited to ~5km tile resolution</li>
             </ul>
-          </section>
-
-          <section>
-            <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              BSSID Formats
-            </h3>
-            <p>
-              You can enter BSSIDs in any of these formats:
-            </p>
-            <ul className="list-disc list-inside space-y-1 font-mono text-xs mt-2">
-              <li>AA:BB:CC:DD:EE:FF</li>
-              <li>AA-BB-CC-DD-EE-FF</li>
-              <li>AABBCCDDEEFF</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Cell Tower Search
-            </h3>
-            <p>
-              WaveDigger also supports finding the location of LTE cell towers. Enter the 
-              MCC, MNC, TAC, and Cell ID to locate a tower. Note that only LTE towers are 
-              supported - 5G NR, UMTS, and GSM towers are not available through this service.
-            </p>
           </section>
 
           <section className="pt-4 border-t" style={{ borderColor: 'var(--border-primary)' }}>

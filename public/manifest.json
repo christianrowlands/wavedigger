@@ -1,7 +1,7 @@
 {
-  "name": "WaveDigger - WiFi Location Finder",
+  "name": "WaveDigger - WiFi & Cell Tower Locator",
   "short_name": "WaveDigger",
-  "description": "Find the physical location of WiFi access points using BSSID (MAC address). Free WiFi network mapping tool.",
+  "description": "Find the physical location of WiFi access points and LTE cell towers. Locate networks using BSSID or cell tower IDs.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

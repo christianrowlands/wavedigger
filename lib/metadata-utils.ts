@@ -53,8 +53,8 @@ export function generateDynamicMetadata(params: GenerateMetadataParams): Metadat
   
   // Default metadata for non-BSSID pages
   return {
-    title: 'WaveDigger - BSSID Lookup & WiFi Access Point Locator',
-    description: 'Find the physical location of WiFi access points using BSSID (MAC address). Free WiFi network mapping tool using Apple location services.',
+    title: 'WaveDigger - WiFi & Cell Tower Locator',
+    description: 'Find the physical location of WiFi access points and LTE cell towers. Locate networks using BSSID (MAC address) or cell tower IDs (MCC, MNC, TAC, Cell ID). Free network mapping tool using Apple location services.',
   };
 }
 

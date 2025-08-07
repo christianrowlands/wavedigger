@@ -17,25 +17,29 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | WaveDigger - WiFi Location Finder',
-    default: 'WaveDigger - BSSID Lookup & WiFi Access Point Locator',
+    template: '%s | WaveDigger - WiFi & Cell Tower Locator',
+    default: 'WaveDigger - WiFi & Cell Tower Locator',
   },
-  description: 'Find the physical location of WiFi access points using BSSID (MAC address). Free WiFi network mapping tool using Apple location services for accurate geolocation.',
+  description: 'Find the physical location of WiFi access points and LTE cell towers. Locate networks using BSSID (MAC address) or cell tower IDs (MCC, MNC, TAC, Cell ID). Free network mapping tool using Apple location services.',
   keywords: [
     'BSSID lookup',
     'WiFi location finder',
+    'cell tower locator',
+    'LTE tower location',
     'MAC address locator',
+    'MCC MNC lookup',
+    'TAC Cell ID finder',
+    'cellular network mapping',
     'wireless network mapping',
     'access point location',
     'WiFi geolocation',
+    'cell tower tracking',
     'BSSID to location',
     'WiFi map',
     'network discovery tool',
     'wireless hotspot finder',
-    'WiFi triangulation',
-    'SSID location',
-    'router location lookup',
-    'WiFi tracking',
+    'mobile network locator',
+    'base station finder',
     'network location services'
   ],
   authors: [{ name: 'WaveDigger Team' }],
@@ -51,8 +55,8 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'WaveDigger - WiFi Location Discovery Tool',
-    description: 'Locate WiFi access points by BSSID (MAC address). Map wireless networks and discover access point locations using Apple location services.',
+    title: 'WaveDigger - WiFi & Cell Tower Locator',
+    description: 'Locate WiFi access points by BSSID and LTE cell towers by network IDs. Map wireless and cellular networks using Apple location services.',
     url: 'https://wavedigger.networksurvey.app',
     siteName: 'WaveDigger',
     images: [
@@ -60,7 +64,7 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'WaveDigger - WiFi Location Finder',
+        alt: 'WaveDigger - WiFi & Cell Tower Locator',
       }
     ],
     locale: 'en_US',
@@ -68,8 +72,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'WaveDigger - BSSID Location Finder',
-    description: 'Find WiFi access point locations by BSSID. Free network mapping tool.',
+    title: 'WaveDigger - WiFi & Cell Tower Locator',
+    description: 'Find WiFi access points and LTE cell tower locations. Free network mapping tool.',
     images: ['/twitter-image.png'],
   },
   robots: {
@@ -124,7 +128,7 @@ export default function RootLayout({
         "@type": "WebApplication",
         "@id": "https://wavedigger.networksurvey.app/#webapp",
         "name": "WaveDigger",
-        "description": "WiFi location finder and BSSID lookup tool. Discover the physical location of wireless access points using MAC addresses.",
+        "description": "WiFi and cell tower location finder. Discover the physical location of wireless access points using BSSID (MAC addresses) and LTE cell towers using network IDs (MCC, MNC, TAC, Cell ID).",
         "url": "https://wavedigger.networksurvey.app",
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "Web",
@@ -137,7 +141,9 @@ export default function RootLayout({
         "featureList": [
           "BSSID to location lookup",
           "Multiple BSSID search",
+          "LTE cell tower location finder",
           "Location-based WiFi discovery",
+          "Include surrounding access points",
           "Interactive map visualization",
           "Search history tracking",
           "Share location URLs"
@@ -158,7 +164,7 @@ export default function RootLayout({
         "@id": "https://wavedigger.networksurvey.app/#website",
         "url": "https://wavedigger.networksurvey.app",
         "name": "WaveDigger",
-        "description": "WiFi location finder and network mapping tool",
+        "description": "WiFi and cell tower location finder and network mapping tool",
         "publisher": {
           "@id": "https://wavedigger.networksurvey.app/#organization"
         },
