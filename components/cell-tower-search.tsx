@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { HelpCircle, AlertCircle, Signal, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { HelpCircle, AlertCircle, Signal, AlertTriangle, Edit2 } from 'lucide-react';
 import type { CellTowerSearchResult, SearchError } from '@/types';
 import { validateCellTowerParams, COMMON_CARRIERS } from '@/lib/cell-tower-utils';
 import { useAnalytics } from '@/hooks/use-analytics';
@@ -22,6 +22,7 @@ interface CellTowerSearchProps {
   initialMnc?: string;
   initialTac?: string;
   initialCellId?: string;
+  isActive?: boolean;
 }
 
 export default function CellTowerSearch({ 
@@ -31,7 +32,8 @@ export default function CellTowerSearch({
   initialMcc = '',
   initialMnc = '',
   initialTac = '',
-  initialCellId = ''
+  initialCellId = '',
+  isActive = true
 }: CellTowerSearchProps) {
   const [mcc, setMcc] = useState(initialMcc);
   const [mnc, setMnc] = useState(initialMnc);
@@ -39,7 +41,12 @@ export default function CellTowerSearch({
   const [cellId, setCellId] = useState(initialCellId);
   const [includeSurrounding, setIncludeSurrounding] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
+  const [showHelp, setShowHelp] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('cellTowerHelpDismissed') !== 'true';
+    }
+    return false;
+  });
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [showLteWarning, setShowLteWarning] = useState(() => {
@@ -48,16 +55,33 @@ export default function CellTowerSearch({
     }
     return true;
   });
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [lastSearchParams, setLastSearchParams] = useState<{ mcc: string; mnc: string; tac: string; cellId: string; carrier?: string } | null>(null);
   const { logEvent } = useAnalytics();
   const { showToast } = useToast();
 
   // Update state when initial values change (for auto-populate)
-  React.useEffect(() => {
+  useEffect(() => {
     if (initialMcc) setMcc(initialMcc);
     if (initialMnc) setMnc(initialMnc);
     if (initialTac) setTacId(initialTac);
     if (initialCellId) setCellId(initialCellId);
   }, [initialMcc, initialMnc, initialTac, initialCellId]);
+
+  // Reset collapsed state when tab becomes inactive
+  useEffect(() => {
+    if (!isActive && isCollapsed) {
+      setIsCollapsed(false);
+    }
+  }, [isActive, isCollapsed]);
+
+  // Save help dismissal state
+  const dismissHelp = () => {
+    setShowHelp(false);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cellTowerHelpDismissed', 'true');
+    }
+  };
 
   const handleSearch = async () => {
     // Clear previous errors
@@ -111,6 +135,23 @@ export default function CellTowerSearch({
       if (data.results && data.results.length > 0) {
         // Clear any previous errors on successful search
         setSearchError(null);
+        
+        // Find carrier name from common carriers
+        const carrier = COMMON_CARRIERS.find(c => c.mcc === parseInt(mcc, 10) && c.mnc === parseInt(mnc, 10));
+        
+        // Store last search params for collapsed view
+        setLastSearchParams({
+          mcc,
+          mnc,
+          tac: tacId,
+          cellId,
+          carrier: carrier?.name
+        });
+        
+        // Auto-collapse on successful search (only on mobile/compact mode)
+        if (compact) {
+          setIsCollapsed(true);
+        }
         
         onSearchResults(data.results, {
           mcc: parseInt(mcc, 10),
@@ -170,11 +211,49 @@ export default function CellTowerSearch({
     }
   };
 
+  // Collapsed view - show compact summary
+  if (isCollapsed && lastSearchParams && compact) {
+    return (
+      <div className="flex items-center justify-between p-2 rounded-lg glass-card animate-fadeIn" style={{
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-primary)'
+      }}>
+        <div className="flex-1 flex items-center gap-2 text-xs" style={{ color: 'var(--text-primary)' }}>
+          <Signal className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--color-primary-500)' }} />
+          <div className="flex flex-wrap items-center gap-1">
+            {lastSearchParams.carrier && (
+              <span className="font-medium">{lastSearchParams.carrier}</span>
+            )}
+            <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
+              {lastSearchParams.mcc}/{lastSearchParams.mnc}
+            </span>
+            <span style={{ color: 'var(--text-tertiary)' }}>•</span>
+            <span className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
+              TAC:{lastSearchParams.tac} Cell:{lastSearchParams.cellId}
+            </span>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsCollapsed(false)}
+          className="px-2 py-1 rounded-md flex items-center gap-1 hover:scale-105 transition-all"
+          style={{
+            backgroundColor: 'var(--bg-tertiary)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-secondary)'
+          }}
+        >
+          <Edit2 className="h-3 w-3" />
+          <span className="text-xs">Edit</span>
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* LTE-only info */}
       {showLteWarning && (
-        <div className="flex items-start gap-2 p-3 rounded-lg" style={{ 
+        <div className="flex items-start gap-2 p-2 rounded-lg" style={{ 
           backgroundColor: 'var(--bg-secondary)',
           border: '1px solid var(--border-secondary)'
         }}>
@@ -198,7 +277,7 @@ export default function CellTowerSearch({
       )}
       {/* Help Section */}
       {showHelp && (
-        <div className="p-3 rounded-lg animate-fadeIn" style={{ 
+        <div className="p-2 rounded-lg animate-fadeIn" style={{ 
           backgroundColor: 'var(--bg-tertiary)',
           border: '1px solid var(--border-secondary)'
         }}>
@@ -392,7 +471,13 @@ export default function CellTowerSearch({
         </button>
         
         <button
-          onClick={() => setShowHelp(!showHelp)}
+          onClick={() => {
+            if (showHelp) {
+              dismissHelp();
+            } else {
+              setShowHelp(true);
+            }
+          }}
           className={`px-3 ${
             compact ? 'py-1.5' : 'py-2'
           } rounded-lg transition-all hover:scale-105`}

@@ -173,6 +173,7 @@ export default function SearchControls({
               initialMnc={selectedTowerParams?.mnc || ''}
               initialTac={selectedTowerParams?.tac || ''}
               initialCellId={selectedTowerParams?.cellId || ''}
+              isActive={activeTab === 'celltower'}
             />
           </div>
         ) : activeTab === 'location' ? (
@@ -348,6 +349,7 @@ export default function SearchControls({
               initialMnc={selectedTowerParams?.mnc || ''}
               initialTac={selectedTowerParams?.tac || ''}
               initialCellId={selectedTowerParams?.cellId || ''}
+              isActive={activeTab === 'celltower'}
             />
           </div>
         </TabsContent>
