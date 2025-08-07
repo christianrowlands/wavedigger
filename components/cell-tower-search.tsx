@@ -7,6 +7,13 @@ import { validateCellTowerParams, COMMON_CARRIERS } from '@/lib/cell-tower-utils
 import { useAnalytics } from '@/hooks/use-analytics';
 import { AnalyticsEvents } from '@/lib/analytics';
 import { useToast } from '@/components/toast-provider';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface CellTowerSearchProps {
   onSearchResults: (results: CellTowerSearchResult[], searchParams?: {
@@ -41,12 +48,6 @@ export default function CellTowerSearch({
   const [cellId, setCellId] = useState(initialCellId);
   const [includeSurrounding, setIncludeSurrounding] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [showHelp, setShowHelp] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('cellTowerHelpDismissed') !== 'true';
-    }
-    return false;
-  });
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [showLteWarning, setShowLteWarning] = useState(() => {
@@ -75,13 +76,6 @@ export default function CellTowerSearch({
     }
   }, [isActive, isCollapsed]);
 
-  // Save help dismissal state
-  const dismissHelp = () => {
-    setShowHelp(false);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cellTowerHelpDismissed', 'true');
-    }
-  };
 
   const handleSearch = async () => {
     // Clear previous errors
@@ -275,29 +269,6 @@ export default function CellTowerSearch({
           </button>
         </div>
       )}
-      {/* Help Section */}
-      {showHelp && (
-        <div className="p-2 rounded-lg animate-fadeIn" style={{ 
-          backgroundColor: 'var(--bg-tertiary)',
-          border: '1px solid var(--border-secondary)'
-        }}>
-          <h4 className="font-medium mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>
-            Example Carriers:
-          </h4>
-          <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-            {COMMON_CARRIERS.slice(0, 6).map((carrier) => (
-              <div key={`${carrier.mcc}-${carrier.mnc}`} className="flex justify-between">
-                <span>{carrier.name} ({carrier.country})</span>
-                <span className="font-mono">MCC:{carrier.mcc} MNC:{carrier.mnc}</span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            Cell ID and TAC ID can be found using network diagnostic apps or cellular network scanners.
-          </p>
-        </div>
-      )}
-
       {/* Input Grid */}
       <div className={`grid ${compact ? 'grid-cols-2 gap-2' : 'grid-cols-2 gap-3'}`}>
         <div>
@@ -396,7 +367,7 @@ export default function CellTowerSearch({
           id="includeSurrounding"
           checked={includeSurrounding}
           onChange={(e) => setIncludeSurrounding(e.target.checked)}
-          className="rounded border-gray-300"
+        className="rounded border-gray-300"
           disabled={isSearching}
         />
         <label 
@@ -470,26 +441,74 @@ export default function CellTowerSearch({
           )}
         </button>
         
-        <button
-          onClick={() => {
-            if (showHelp) {
-              dismissHelp();
-            } else {
-              setShowHelp(true);
-            }
-          }}
-          className={`px-3 ${
-            compact ? 'py-1.5' : 'py-2'
-          } rounded-lg transition-all hover:scale-105`}
-          style={{
-            backgroundColor: showHelp ? 'var(--color-primary-100)' : 'var(--bg-tertiary)',
-            border: '1px solid var(--border-secondary)',
-            color: 'var(--text-primary)'
-          }}
-          title="Show carrier examples"
-        >
-          <HelpCircle className="h-4 w-4" />
-        </button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <button
+              className={`px-3 ${
+                compact ? 'py-1.5' : 'py-2'
+              } rounded-lg transition-all hover:scale-105`}
+              style={{
+                backgroundColor: 'var(--bg-tertiary)',
+                border: '1px solid var(--border-secondary)',
+                color: 'var(--text-primary)'
+              }}
+              title="Show carrier examples"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-xl mb-4">Cell Tower Search Help</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* LTE Support Section */}
+              <section>
+                <h3 className="font-semibold mb-2 text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <AlertTriangle className="h-4 w-4" style={{ color: 'var(--color-primary-400)' }} />
+                  LTE Support Only
+                </h3>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  This search only supports LTE towers. 5G NR, UMTS, and GSM towers are not available through Apple&apos;s location services.
+                </p>
+              </section>
+
+              {/* How to Find Parameters */}
+              <section>
+                <h3 className="font-semibold mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>
+                  How to Find Tower Parameters
+                </h3>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Use network diagnostic apps or cellular network scanners like{' '}
+                  <a 
+                    href="https://www.networksurvey.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleNetworkSurveyClick}
+                    className="underline hover:opacity-80"
+                    style={{ color: 'var(--color-primary)' }}
+                  >
+                    Network Survey
+                  </a>{' '}
+                  to find your tower&apos;s MCC, MNC, TAC, and Cell ID values.
+                </p>
+              </section>
+
+              {/* Required Parameters */}
+              <section>
+                <h3 className="font-semibold mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>
+                  Required Parameters
+                </h3>
+                <ul className="space-y-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  <li><strong>MCC:</strong> Mobile Country Code (3 digits)</li>
+                  <li><strong>MNC:</strong> Mobile Network Code (2-3 digits)</li>
+                  <li><strong>TAC:</strong> Tracking Area Code</li>
+                  <li><strong>Cell ID:</strong> Cell Tower Identifier</li>
+                </ul>
+              </section>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Info Text */}

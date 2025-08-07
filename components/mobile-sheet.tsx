@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ShareButton from '@/components/share-button';
 import CopyButton from '@/components/copy-button';
 import { useShareUrl } from '@/hooks/use-share-url';
@@ -15,6 +15,8 @@ interface MobileSheetProps {
   children: React.ReactNode;
   onMarkerSelect: (marker: MapMarker) => void;
   activeTab?: 'bssid' | 'location' | 'celltower';
+  forceClose?: boolean;
+  onForceCloseComplete?: () => void;
 }
 
 // Sheet states
@@ -32,7 +34,9 @@ export default function MobileSheet({
   cellTowerSearchHistory = [],
   children,
   onMarkerSelect,
-  activeTab = 'bssid'
+  activeTab = 'bssid',
+  forceClose = false,
+  onForceCloseComplete
 }: MobileSheetProps) {
   const [sheetState, setSheetState] = useState<SheetState>('closed');
   const [sheetHeight, setSheetHeight] = useState(SHEET_CLOSED_HEIGHT);
@@ -46,6 +50,18 @@ export default function MobileSheet({
   const contentRef = useRef<HTMLDivElement>(null);
   const dragHandleRef = useRef<HTMLDivElement>(null);
   const { generateShareUrl } = useShareUrl();
+  
+  // Handle force close from parent
+  useEffect(() => {
+    if (forceClose && sheetState !== 'closed') {
+      setSheetState('closed');
+      setSheetHeight(SHEET_CLOSED_HEIGHT);
+      // Notify parent that close is complete after animation
+      if (onForceCloseComplete) {
+        setTimeout(onForceCloseComplete, 300); // Match transition duration
+      }
+    }
+  }, [forceClose, sheetState, onForceCloseComplete]);
   
   // Calculate max height based on window size
   const getMaxHeight = () => {

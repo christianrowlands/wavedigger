@@ -47,6 +47,7 @@ function HomeContent() {
     tac: string; 
     cellId: string; 
   } | null>(null);
+  const [shouldCloseSheet, setShouldCloseSheet] = useState(false);
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -393,6 +394,8 @@ function HomeContent() {
     setSelectedMarker(null);
     setSearchHistory([]);
     setCellTowerSearchHistory([]);
+    // Close the mobile sheet since there's no content
+    setShouldCloseSheet(true);
     // Clear URL parameters when clearing all
     router.push('/');
   };
@@ -1044,6 +1047,8 @@ function HomeContent() {
           searchHistory={searchHistory}
           cellTowerSearchHistory={cellTowerSearchHistory}
           activeTab={activeTab}
+          forceClose={shouldCloseSheet}
+          onForceCloseComplete={() => setShouldCloseSheet(false)}
           onMarkerSelect={(marker) => {
             setSelectedMarker(marker);
             setFlyToLocation({

@@ -406,10 +406,10 @@ export default function MapView({
         const iconKey = `${iconType}-${isHovered ? 'hover' : 'regular'}`;
         return iconMapping[iconKey];
       },
-      getSize: 48,
+      getSize: 32,
       sizeScale: 1,
-      sizeMinPixels: 32,
-      sizeMaxPixels: 64,
+      sizeMinPixels: 24,
+      sizeMaxPixels: 48,
       onHover: handleHover,
       onClick: handleClick,
       updateTriggers: {
@@ -433,10 +433,10 @@ export default function MapView({
         const iconKey = `${iconType}-selected${isHovered ? '-hover' : ''}`;
         return iconMapping[iconKey];
       },
-      getSize: 72,
+      getSize: 48,
       sizeScale: 1,
-      sizeMinPixels: 48,
-      sizeMaxPixels: 96,
+      sizeMinPixels: 32,
+      sizeMaxPixels: 64,
       onHover: handleHover,
       onClick: handleClick,
       updateTriggers: {
