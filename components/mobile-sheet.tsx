@@ -181,7 +181,7 @@ export default function MobileSheet({
   return (
     <div 
       ref={sheetRef}
-      className={`fixed bottom-0 left-0 right-0 lg:hidden ${isDragging ? '' : 'transition-all duration-300 ease-out'} ${sheetState === 'full' ? 'z-40' : 'z-20'}`}
+      className={`fixed bottom-0 left-0 right-0 lg:hidden ${isDragging ? '' : 'transition-all duration-300 ease-out'} ${sheetState === 'full' ? 'z-50' : 'z-40'}`}
       style={{
         height: `${sheetHeight}px`,
         transform: 'translateY(0)',
