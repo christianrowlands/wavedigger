@@ -552,7 +552,7 @@ export default function CellTowerSearch({
                     rel="noopener noreferrer"
                     onClick={handleNetworkSurveyClick}
                     className="underline hover:opacity-80"
-                    style={{ color: 'var(--color-primary)' }}
+                    style={{ color: 'var(--color-link)' }}
                   >
                     Network Survey
                   </a>{' '}
@@ -587,7 +587,7 @@ export default function CellTowerSearch({
             rel="noopener noreferrer"
             onClick={handleNetworkSurveyClick}
             className="underline hover:opacity-80"
-            style={{ color: 'var(--color-primary)' }}
+            style={{ color: 'var(--color-link)' }}
           >
             Network Survey
           </a>

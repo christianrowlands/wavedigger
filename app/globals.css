@@ -87,6 +87,9 @@
   --border-secondary: hsl(243, 20%, 85%);
   --border-focus: var(--color-primary-500);
   
+  /* Link colors */
+  --color-link: var(--color-primary-400);
+  
   /* Colored Shadows for Light Theme */
   --shadow-xs: 0 1px 2px 0 hsl(243, 50%, 80% / 0.1);
   --shadow-sm: 0 1px 3px 0 hsl(243, 50%, 70% / 0.12), 0 1px 2px -1px hsl(243, 50%, 70% / 0.12);
@@ -290,6 +293,9 @@ html {
   
   --border-primary: var(--color-gray-700);
   --border-secondary: var(--color-gray-600);
+  
+  /* Link colors - lighter for better readability */
+  --color-link: var(--color-secondary-400);
   
   /* Adjust shadows for dark theme */
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.1);
