@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { HelpCircle, AlertCircle, Signal, AlertTriangle, Edit2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { HelpCircle, AlertCircle, Signal, AlertTriangle, Edit2, ChevronUp } from 'lucide-react';
 import type { CellTowerSearchResult, SearchError } from '@/types';
 import { validateCellTowerParams, COMMON_CARRIERS } from '@/lib/cell-tower-utils';
 import { useAnalytics } from '@/hooks/use-analytics';
@@ -62,6 +62,7 @@ export default function CellTowerSearch({
   const [lastSearchParams, setLastSearchParams] = useState<{ mcc: string; mnc: string; tac: string; cellId: string; carrier?: string } | null>(null);
   const { logEvent } = useAnalytics();
   const { showToast } = useToast();
+  const hasAppliedUrlCollapse = useRef(false);
 
   // Update state when initial values change (for auto-populate)
   useEffect(() => {
@@ -80,7 +81,7 @@ export default function CellTowerSearch({
 
   // Handle starting collapsed when loaded from URL
   useEffect(() => {
-    if (shouldStartCollapsed && compact && !isCollapsed) {
+    if (shouldStartCollapsed && compact && !hasAppliedUrlCollapse.current) {
       // Only collapse if we have the initial values (meaning results were loaded)
       if (initialMcc && initialMnc && initialTac && initialCellId) {
         setIsCollapsed(true);
@@ -93,9 +94,16 @@ export default function CellTowerSearch({
           cellId: initialCellId,
           carrier: carrier?.name
         });
+        // Mark that we've applied the URL collapse
+        hasAppliedUrlCollapse.current = true;
       }
     }
-  }, [shouldStartCollapsed, compact, initialMcc, initialMnc, initialTac, initialCellId, isCollapsed]);
+    
+    // Reset the flag when shouldStartCollapsed becomes false
+    if (!shouldStartCollapsed && hasAppliedUrlCollapse.current) {
+      hasAppliedUrlCollapse.current = false;
+    }
+  }, [shouldStartCollapsed, compact, initialMcc, initialMnc, initialTac, initialCellId]);
 
 
   const handleSearch = async () => {
@@ -461,6 +469,43 @@ export default function CellTowerSearch({
             </>
           )}
         </button>
+        
+        {/* Collapse button - mobile only */}
+        {compact && (
+          <button
+            onClick={() => {
+              // Only allow collapse if we have values to show
+              if (mcc && mnc && tacId && cellId) {
+                // Find carrier name for the collapsed view
+                const carrier = COMMON_CARRIERS.find(c => 
+                  c.mcc === parseInt(mcc, 10) && c.mnc === parseInt(mnc, 10)
+                );
+                setLastSearchParams({
+                  mcc,
+                  mnc,
+                  tac: tacId,
+                  cellId,
+                  carrier: carrier?.name
+                });
+                setIsCollapsed(true);
+              }
+            }}
+            className={`px-3 ${
+              compact ? 'py-1.5' : 'py-2'
+            } rounded-lg transition-all hover:scale-105`}
+            style={{
+              backgroundColor: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-secondary)',
+              color: mcc && mnc && tacId && cellId ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              opacity: mcc && mnc && tacId && cellId ? 1 : 0.5,
+              cursor: mcc && mnc && tacId && cellId ? 'pointer' : 'not-allowed'
+            }}
+            disabled={!(mcc && mnc && tacId && cellId)}
+            title="Minimize search"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
+        )}
         
         <Dialog>
           <DialogTrigger asChild>
