@@ -1070,7 +1070,7 @@ function HomeContent() {
             {activeTab === 'bssid' 
               ? `${searchHistory.length} locations found`
               : activeTab === 'celltower'
-              ? `${markers.length} towers`
+              ? `${cellTowerSearchHistory.length} towers found`
               : `${markers.length} access points`
             }
           </div>

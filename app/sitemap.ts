@@ -10,8 +10,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'daily',
       priority: 1,
     },
-    // Add specific BSSID pages if you have popular/example searches
-    // These could be dynamically generated from a database in the future
     {
       url: `${baseUrl}/?tab=bssid`,
       lastModified: new Date(),
@@ -20,6 +18,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/?tab=location`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/?tab=celltower`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,
