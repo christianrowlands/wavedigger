@@ -40,6 +40,8 @@ export interface CellTowerInfo {
   mnc: number;
   cellId: number;
   tacId: number;
+  uarfcn?: number;  // EARFCN for LTE (E-UTRA Absolute Radio Frequency Channel Number)
+  pid?: number;     // PCI for LTE (Physical Cell ID)
 }
 
 export interface CellTowerSearchResult {

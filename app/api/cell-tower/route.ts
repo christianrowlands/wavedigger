@@ -141,7 +141,9 @@ async function queryAppleWLOCForCellTower(
           mcc: tower.mcc || 0,
           mnc: tower.mnc || 0,
           cellId: tower.cellId || 0,
-          tacId: tower.tacId || 0
+          tacId: tower.tacId || 0,
+          uarfcn: tower.uarfcn,  // Include UARFCN if present
+          pid: tower.pid         // Include PID if present
         },
         location: {
           latitude: location.lat,

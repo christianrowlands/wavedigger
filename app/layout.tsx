@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: '%s | WaveDigger - WiFi & Cell Tower Locator',
     default: 'WaveDigger - WiFi & Cell Tower Locator',
   },
-  description: 'Find the physical location of WiFi access points and LTE cell towers. Locate networks using BSSID (MAC address) or cell tower IDs (MCC, MNC, TAC, Cell ID). Free network mapping tool using Apple location services.',
+  description: 'Find the physical location of WiFi access points and LTE cell towers. Locate networks using BSSID (MAC address) or cell tower IDs (MCC, MNC, TAC, Cell ID). View EARFCN and PCI values for LTE towers. Free network mapping tool using Apple location services.',
   keywords: [
     'BSSID lookup',
     'WiFi location finder',
@@ -40,7 +40,12 @@ export const metadata: Metadata = {
     'wireless hotspot finder',
     'mobile network locator',
     'base station finder',
-    'network location services'
+    'network location services',
+    'EARFCN lookup',
+    'PCI cell tower',
+    'LTE frequency',
+    'Physical Cell ID',
+    'E-UTRA frequency channel'
   ],
   authors: [{ name: 'WaveDigger Team' }],
   creator: 'WaveDigger',
@@ -128,7 +133,7 @@ export default function RootLayout({
         "@type": "WebApplication",
         "@id": "https://wavedigger.networksurvey.app/#webapp",
         "name": "WaveDigger",
-        "description": "WiFi and cell tower location finder. Discover the physical location of wireless access points using BSSID (MAC addresses) and LTE cell towers using network IDs (MCC, MNC, TAC, Cell ID).",
+        "description": "WiFi and cell tower location finder. Discover the physical location of wireless access points using BSSID (MAC addresses) and LTE cell towers using network IDs (MCC, MNC, TAC, Cell ID). View EARFCN and PCI values for advanced LTE tower analysis.",
         "url": "https://wavedigger.networksurvey.app",
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "Web",

@@ -214,7 +214,9 @@ function HomeContent() {
         result.tower.mcc,
         result.tower.mnc,
         result.tower.cellId,
-        result.tower.tacId
+        result.tower.tacId,
+        result.tower.uarfcn,
+        result.tower.pid
       );
       return {
         id: `cell-${result.tower.cellId}-${Date.now()}-${index}`,
@@ -285,7 +287,9 @@ function HomeContent() {
         results[0].tower.mcc,
         results[0].tower.mnc,
         results[0].tower.cellId,
-        results[0].tower.tacId
+        results[0].tower.tacId,
+        results[0].tower.uarfcn,
+        results[0].tower.pid
       );
       
       const historyItem: BSSIDSearchResult = {
@@ -705,6 +709,48 @@ function HomeContent() {
                               />
                             </div>
                           </div>
+                          {towerInfo.uarfcn !== undefined && (
+                            <div className="flex items-center justify-between">
+                              <span 
+                                className="text-sm font-medium" 
+                                style={{ color: 'var(--text-tertiary)' }}
+                                title="E-UTRA Absolute Radio Frequency Channel Number - identifies the LTE frequency band"
+                              >
+                                EARFCN
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+                                  {towerInfo.uarfcn}
+                                </span>
+                                <CopyButton 
+                                  text={towerInfo.uarfcn.toString()} 
+                                  label="EARFCN"
+                                  analyticsSource="selected_marker"
+                                />
+                              </div>
+                            </div>
+                          )}
+                          {towerInfo.pid !== undefined && (
+                            <div className="flex items-center justify-between">
+                              <span 
+                                className="text-sm font-medium" 
+                                style={{ color: 'var(--text-tertiary)' }}
+                                title="Physical Cell ID - unique identifier for the cell within the local area"
+                              >
+                                PCI
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+                                  {towerInfo.pid}
+                                </span>
+                                <CopyButton 
+                                  text={towerInfo.pid.toString()} 
+                                  label="PCI"
+                                  analyticsSource="selected_marker"
+                                />
+                              </div>
+                            </div>
+                          )}
                         </>
                       );
                     })()
@@ -886,9 +932,24 @@ function HomeContent() {
                               </span>
                             )}
                           </p>
-                          <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                            {result.bssid.split(' - ')[1]}
-                          </p>
+                          {(() => {
+                            const towerInfo = parseCellTowerInfo(result.bssid);
+                            if (!towerInfo) return null;
+                            return (
+                              <>
+                                <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                                  MCC:{towerInfo.mcc} MNC:{towerInfo.mnc} TAC:{towerInfo.tacId} Cell:{towerInfo.cellId}
+                                </p>
+                                {(towerInfo.uarfcn !== undefined || towerInfo.pid !== undefined) && (
+                                  <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                                    {towerInfo.uarfcn !== undefined && `EARFCN:${towerInfo.uarfcn}`}
+                                    {towerInfo.uarfcn !== undefined && towerInfo.pid !== undefined && ' • '}
+                                    {towerInfo.pid !== undefined && `PCI:${towerInfo.pid}`}
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()}
                           <p className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--text-tertiary)' }}>
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

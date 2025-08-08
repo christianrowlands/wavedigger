@@ -345,6 +345,46 @@ export default function MobileSheet({
                             />
                           </div>
                         </div>
+                        {towerInfo.uarfcn !== undefined && (
+                          <div className="flex justify-between">
+                            <span 
+                              style={{ color: 'var(--text-tertiary)' }}
+                              title="E-UTRA Absolute Radio Frequency Channel Number - identifies the LTE frequency band"
+                            >
+                              EARFCN
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono">{towerInfo.uarfcn}</span>
+                              <CopyButton 
+                                text={towerInfo.uarfcn.toString()} 
+                                label="EARFCN" 
+                                size="sm"
+                                analyticsType="location"
+                                analyticsSource="mobile_sheet"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {towerInfo.pid !== undefined && (
+                          <div className="flex justify-between">
+                            <span 
+                              style={{ color: 'var(--text-tertiary)' }}
+                              title="Physical Cell ID - unique identifier for the cell within the local area"
+                            >
+                              PCI
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono">{towerInfo.pid}</span>
+                              <CopyButton 
+                                text={towerInfo.pid.toString()} 
+                                label="PCI" 
+                                size="sm"
+                                analyticsType="location"
+                                analyticsSource="mobile_sheet"
+                              />
+                            </div>
+                          </div>
+                        )}
                         <div className="flex justify-between pt-1 border-t" style={{ borderColor: 'var(--border-primary)' }}>
                           <span style={{ color: 'var(--text-tertiary)' }}>Location</span>
                           <div className="flex items-center gap-2">
@@ -485,6 +525,13 @@ export default function MobileSheet({
                     <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
                       MCC:{towerInfo.mcc} MNC:{towerInfo.mnc} TAC:{towerInfo.tacId} Cell:{towerInfo.cellId}
                     </p>
+                    {(towerInfo.uarfcn !== undefined || towerInfo.pid !== undefined) && (
+                      <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                        {towerInfo.uarfcn !== undefined && `EARFCN:${towerInfo.uarfcn}`}
+                        {towerInfo.uarfcn !== undefined && towerInfo.pid !== undefined && ' • '}
+                        {towerInfo.pid !== undefined && `PCI:${towerInfo.pid}`}
+                      </p>
+                    )}
                     <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
                       {result.location.latitude.toFixed(4)}, {result.location.longitude.toFixed(4)}
                     </p>
