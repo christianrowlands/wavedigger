@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Search, Loader2, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -37,6 +37,7 @@ export default function BSSIDSearch({
   const [includeSurrounding, setIncludeSurrounding] = useState(false);
   const [lastSearchCount, setLastSearchCount] = useState<number | null>(null);
   
+  const searchInProgressRef = useRef(false);
   const { trackBSSIDSearch, trackSearchError, logEvent } = useAnalytics();
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +60,14 @@ export default function BSSIDSearch({
   }, [error]);
 
   const handleSearch = async (bssidOverride?: string) => {
+    // Prevent duplicate searches
+    if (searchInProgressRef.current) {
+      return;
+    }
+    
+    // Mark search as in progress immediately
+    searchInProgressRef.current = true;
+    
     // Clear previous error
     setError(null);
     
@@ -70,14 +79,15 @@ export default function BSSIDSearch({
     
     if (!validation.isValid) {
       setError(validation.error || 'Invalid BSSID format');
+      searchInProgressRef.current = false;
       return;
     }
     
     if (!validation.normalized) {
       setError('Failed to normalize BSSID');
+      searchInProgressRef.current = false;
       return;
     }
-    
     setIsLoading(true);
     onSearchStart?.();
     
@@ -188,6 +198,7 @@ export default function BSSIDSearch({
       trackSearchError('Network error', 'bssid');
     } finally {
       setIsLoading(false);
+      searchInProgressRef.current = false;
     }
   };
 

@@ -15,7 +15,7 @@ import CopyButton from '@/components/copy-button';
 import { useShareUrl } from '@/hooks/use-share-url';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { AnalyticsEvents } from '@/lib/analytics';
-import { formatBSSIDForURL, parseBSSIDFromURL, formatBSSIDForDisplay } from '@/lib/bssid-utils';
+import { formatBSSIDForURL, parseBSSIDFromURL, formatBSSIDForDisplay, normalizeBSSIDForComparison } from '@/lib/bssid-utils';
 import type { BSSIDSearchResult, MapMarker, CellTowerSearchResult } from '@/types';
 import { formatCellTowerInfo, isCellTowerLabel, parseCellTowerInfo } from '@/lib/cell-tower-utils';
 
@@ -121,6 +121,35 @@ function HomeContent() {
   }, [router, isMultiMode, searchParams]);
 
   const handleSearchResult = useCallback((result: BSSIDSearchResult, shouldFlyTo: boolean = false) => {
+    // Normalize BSSID for comparison
+    const normalizedBssid = normalizeBSSIDForComparison(result.bssid);
+    
+    // Check if a marker with this BSSID already exists
+    const existingMarkerIndex = markers.findIndex(m => 
+      normalizeBSSIDForComparison(m.bssid) === normalizedBssid
+    );
+    
+    if (existingMarkerIndex !== -1) {
+      // Marker already exists, just select it and fly to it if needed
+      const existingMarker = markers[existingMarkerIndex];
+      setSelectedMarker(existingMarker);
+      
+      if (shouldFlyTo) {
+        setFlyToLocation({
+          longitude: existingMarker.position[0],
+          latitude: existingMarker.position[1]
+        });
+      }
+      
+      // Update URL if not loading from URL
+      if (!isLoadingFromUrl) {
+        updateUrl({ bssid: result.bssid });
+      }
+      
+      return; // Don't add duplicate marker
+    }
+    
+    // Create new marker only if it doesn't exist
     const newMarker: MapMarker = {
       id: `${result.bssid}-${Date.now()}`,
       bssid: result.bssid,
@@ -145,12 +174,23 @@ function HomeContent() {
     if (!isLoadingFromUrl) {
       updateUrl({ bssid: result.bssid });
     }
-  }, [updateUrl, isLoadingFromUrl]);
+  }, [markers, updateUrl, isLoadingFromUrl]);
   
   const handleManualSearchResult = useCallback((result: BSSIDSearchResult) => {
     // Add to search history for manual searches (only if it's not a cell tower)
     if (!isCellTowerLabel(result.bssid)) {
-      setSearchHistory(prev => [result, ...prev.slice(0, 9)]);
+      setSearchHistory(prev => {
+        // Normalize BSSID for comparison
+        const normalizedBssid = normalizeBSSIDForComparison(result.bssid);
+        
+        // Filter out any existing entries with the same BSSID
+        const filtered = prev.filter(item => 
+          normalizeBSSIDForComparison(item.bssid) !== normalizedBssid
+        );
+        
+        // Add new result at the beginning and keep only 10 most recent
+        return [result, ...filtered].slice(0, 10);
+      });
     }
     // Call the regular handler with flyTo enabled for manual searches
     handleSearchResult(result, true);
@@ -504,13 +544,8 @@ function HomeContent() {
               has_lat_lng: !!(latParam && lngParam)
             });
             
-            // For URL-loaded searches, fly to the location
-            handleSearchResult(data.result, true);
-            
-            // Add to search history for URL-loaded searches (only if it's not a cell tower)
-            if (!isCellTowerLabel(data.result.bssid)) {
-              setSearchHistory(prev => [data.result, ...prev.slice(0, 9)]);
-            }
+            // For URL-loaded searches, use handleManualSearchResult to handle both marker and history
+            handleManualSearchResult(data.result);
             
             // If specific lat/lng provided, use those instead
             if (latParam && lngParam) {
@@ -537,7 +572,7 @@ function HomeContent() {
       
       searchBssid();
     }
-  }, [searchParams, handleSearchResult, handleCellTowerSearchResults, logEvent]);
+  }, [searchParams, handleManualSearchResult, handleCellTowerSearchResults, logEvent]);
 
   return (
     <div className="h-full flex flex-col gradient-mesh-vibrant mobile-no-overscroll" style={{ background: 'var(--bg-primary)', position: 'fixed', inset: 0 }}>
