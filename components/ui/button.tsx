@@ -110,13 +110,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             Object.assign(e.currentTarget.style, {
               background: styles.background,
               color: styles.color,
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+               
               border: (styles as any).border || '',
               transform: 'translateY(0)',
               boxShadow: 'none',
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+               
               textDecoration: (styles as any).textDecoration || '',
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+               
               textUnderlineOffset: (styles as any).textUnderlineOffset || ''
             })
           }

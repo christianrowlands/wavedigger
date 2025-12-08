@@ -32,14 +32,7 @@ export default function LocationSearch({
   
   const { trackLocationSearch, trackSearchError } = useAnalytics();
 
-  // Handle location search when clickedLocation changes
-  React.useEffect(() => {
-    if (!clickedLocation) return;
-    
-    performLocationSearch(clickedLocation.latitude, clickedLocation.longitude);
-  }, [clickedLocation]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const performLocationSearch = async (latitude: number, longitude: number) => {
+  const performLocationSearch = React.useCallback(async (latitude: number, longitude: number) => {
     setError(null);
     setSearchStats(null);
     setSearchProgress('Finding nearby access points...');
@@ -115,7 +108,14 @@ export default function LocationSearch({
       setSearchProgress(null);
       onSearchEnd?.();
     }
-  };
+  }, [onSearchStart, onSearchEnd, onSearchResults, trackLocationSearch, trackSearchError]);
+
+  // Handle location search when clickedLocation changes
+  React.useEffect(() => {
+    if (!clickedLocation) return;
+
+    performLocationSearch(clickedLocation.latitude, clickedLocation.longitude);
+  }, [clickedLocation, performLocationSearch]);
 
   return (
     <div className="w-full space-y-4">

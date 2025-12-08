@@ -219,7 +219,7 @@ export function serializeRequest(wlocData: IAppleWLoc): Buffer {
   
   // Build the protobuf data structure properly
   // IMPORTANT: protobufjs expects camelCase field names, not snake_case
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const protoData: any = {
     wifiDevices: [],           // camelCase, not wifi_devices
     numWifiResults: wlocData.numWifiResults ?? 0,  // Use input value, default to 0 for all results
@@ -297,7 +297,7 @@ export function parseResponse(data: Buffer): IAppleWLoc {
       defaults: true, // Include default values
       arrays: true,   // Always create arrays
       objects: true   // Always create objects
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     }) as any;
     
     // protobufjs returns camelCase field names

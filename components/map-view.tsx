@@ -91,9 +91,9 @@ export default function MapView({
     hoverGradientStart: '#22D3EE',
     hoverGradientEnd: '#5EEAD4'
   });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const deckRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const mapRef = useRef<any>(null);
   
   const { trackMapStyleChange, logEvent } = useAnalytics();
@@ -211,7 +211,7 @@ export default function MapView({
   }, [showStyleMenu]);
 
   // Handle view state changes
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const handleViewStateChange = useCallback(({ viewState: newViewState }: any) => {
     // Always maintain transitionDuration: 0 for user interactions to prevent bounce
     setViewState({

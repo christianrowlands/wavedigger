@@ -43,12 +43,12 @@ export default function MobileSheet({
   const [isDragging, setIsDragging] = useState(false);
   const [startY, setStartY] = useState(0);
   const [startHeight, setStartHeight] = useState(0);
-  const [dragStartTime, setDragStartTime] = useState(0);
   const [dragStartX, setDragStartX] = useState(0);
   const [hasMoved, setHasMoved] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const dragHandleRef = useRef<HTMLDivElement>(null);
+  const dragStartTimeRef = useRef<number>(0);
   const { generateShareUrl } = useShareUrl();
   
   // Handle force close from parent
@@ -75,7 +75,7 @@ export default function MobileSheet({
     setStartY(e.clientY);
     setDragStartX(e.clientX);
     setStartHeight(sheetHeight);
-    setDragStartTime(Date.now());
+    dragStartTimeRef.current = Date.now();
     setHasMoved(false);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -115,7 +115,8 @@ export default function MobileSheet({
     const maxHeight = getMaxHeight();
     const currentHeight = sheetHeight;
     const dragDistance = currentHeight - startHeight;
-    const dragDuration = Date.now() - dragStartTime;
+    // eslint-disable-next-line react-hooks/purity -- Date.now() in event handlers is legitimate
+    const dragDuration = Date.now() - dragStartTimeRef.current;
     const velocity = dragDuration > 0 ? dragDistance / dragDuration : 0;
     
     // Threshold for triggering state change (20% of the distance between states)
