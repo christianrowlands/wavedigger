@@ -110,12 +110,19 @@ export default function LocationSearch({
     }
   }, [onSearchStart, onSearchEnd, onSearchResults, trackLocationSearch, trackSearchError]);
 
+  // Keep a ref so the effect only re-fires when clickedLocation changes,
+  // not when performLocationSearch gets a new identity.
+  const performLocationSearchRef = React.useRef(performLocationSearch);
+  React.useEffect(() => {
+    performLocationSearchRef.current = performLocationSearch;
+  }, [performLocationSearch]);
+
   // Handle location search when clickedLocation changes
   React.useEffect(() => {
     if (!clickedLocation) return;
 
-    performLocationSearch(clickedLocation.latitude, clickedLocation.longitude);
-  }, [clickedLocation, performLocationSearch]);
+    performLocationSearchRef.current(clickedLocation.latitude, clickedLocation.longitude);
+  }, [clickedLocation]);
 
   return (
     <div className="w-full space-y-4">

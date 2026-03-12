@@ -405,8 +405,7 @@ export default function CellTowerSearch({
           id="includeSurrounding"
           checked={includeSurrounding}
           onChange={(e) => setIncludeSurrounding(e.target.checked)}
-        className="rounded"
-          style={{ borderColor: 'var(--border-primary)', accentColor: 'var(--color-primary-500)' }}
+        className="checkbox-themed"
           disabled={isSearching}
         />
         <label 

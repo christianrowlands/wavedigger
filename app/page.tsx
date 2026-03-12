@@ -363,6 +363,9 @@ function HomeContent() {
     }
   }, [updateUrl, isLoadingFromUrl]);
 
+  const handleLocationSearchStart = useCallback(() => setIsLocationSearching(true), []);
+  const handleLocationSearchEnd = useCallback(() => setIsLocationSearching(false), []);
+
   const handleLocationSearchResults = useCallback((results: BSSIDSearchResult[]) => {
     const newMarkers: MapMarker[] = results.map((result, index) => ({
       id: `loc-${result.bssid}-${Date.now()}-${index}`,
@@ -642,8 +645,8 @@ function HomeContent() {
               urlBssid={urlBssid}
               activeTab={activeTab}
               onTabChange={handleTabChange}
-              onLocationSearchStart={() => setIsLocationSearching(true)}
-              onLocationSearchEnd={() => setIsLocationSearching(false)}
+              onLocationSearchStart={handleLocationSearchStart}
+              onLocationSearchEnd={handleLocationSearchEnd}
               isLocationSearching={isLocationSearching}
               clickedLocation={clickedLocation}
               selectedTowerParams={selectedTowerParams}

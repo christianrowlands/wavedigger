@@ -217,7 +217,7 @@ export default function BSSIDSearch({
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         {mobileToggle && <div className="lg:hidden">{mobileToggle}</div>}
         <Input
           type="text"
@@ -267,11 +267,7 @@ export default function BSSIDSearch({
               setIncludeSurrounding(newValue);
               logEvent(AnalyticsEvents.TOGGLE_SURROUNDING_APS, { enabled: newValue });
             }}
-            className="w-4 h-4 rounded border-2 transition-colors"
-            style={{
-              borderColor: 'var(--border-primary)',
-              accentColor: 'var(--color-primary-500)'
-            }}
+            className="checkbox-themed"
           />
           <span className="text-sm select-none transition-colors group-hover:text-primary-600" 
                 style={{ color: 'var(--text-secondary)' }}>
