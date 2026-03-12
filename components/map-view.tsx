@@ -3,7 +3,6 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
 import { Map as MapGL } from 'react-map-gl';
-import type { StyleSpecification } from 'mapbox-gl';
 import { IconLayer, ScatterplotLayer } from '@deck.gl/layers';
 import { FlyToInterpolator } from '@deck.gl/core';
 import type { PickingInfo, FlyToInterpolator as FlyToInterpolatorType } from '@deck.gl/core';
@@ -138,63 +137,47 @@ export default function MapView({
   
   // Track if initial load has completed
   const [hasInitialLoadCompleted, setHasInitialLoadCompleted] = useState(false);
-  
+
   // Mark initial load as completed after first render
   useEffect(() => {
     if (isMapReady && !hasInitialLoadCompleted) {
       setHasInitialLoadCompleted(true);
     }
   }, [isMapReady, hasInitialLoadCompleted]);
+
+  // Shared helper to apply Standard style label configuration
+  const applyStandardConfig = useCallback(() => {
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    try {
+      map.setConfigProperty('basemap', 'lightPreset', isDarkMode ? 'dusk' : 'day');
+    } catch (error) {
+      console.error('[MapView] Error applying Standard config:', error);
+    }
+  }, [isDarkMode]);
   
   // Handle style changes after initial load (when switching between styles)
   useEffect(() => {
-    // Skip on initial load
+    // Skip on initial load - onLoad handler applies config there
     if (!hasInitialLoadCompleted || !isMapReady || !mapRef.current) return;
-    
-    
-    // When switching TO Standard style, we need to apply config since the URL doesn't include it
+
     if (currentStyle === 'standard') {
       const map = mapRef.current.getMap();
       if (map) {
-        // Function to apply Standard style configuration
-        const applyStandardConfig = () => {
-          try {
-            map.setConfigProperty('basemap', 'lightPreset', isDarkMode ? 'dusk' : 'day');
-            map.setConfigProperty('basemap', 'showPointOfInterestLabels', true);
-            map.setConfigProperty('basemap', 'showTransitLabels', true);
-            map.setConfigProperty('basemap', 'showPlaceLabels', true);
-            map.setConfigProperty('basemap', 'showRoadLabels', true);
-          } catch (error) {
-            console.error('[MapView] Error applying Standard config:', error);
-          }
-        };
-        
-        // Check if style is already loaded
-        if (map.isStyleLoaded()) {
-          setTimeout(applyStandardConfig, 100);
-        } else {
-          // Wait for style to load
-          map.once('style.load', () => {
-            setTimeout(applyStandardConfig, 100);
-          });
-        }
+        map.once('idle', applyStandardConfig);
       }
     }
-  }, [currentStyle, hasInitialLoadCompleted, isMapReady, isDarkMode]);
+  }, [currentStyle, hasInitialLoadCompleted, isMapReady, applyStandardConfig]);
   
   // Handle dark mode changes for Standard style (separate from style switching)
   useEffect(() => {
     if (!isMapReady || !mapRef.current || currentStyle !== 'standard' || !hasInitialLoadCompleted) return;
-    
+
     const map = mapRef.current.getMap();
     if (map && map.isStyleLoaded()) {
-      try {
-        map.setConfigProperty('basemap', 'lightPreset', isDarkMode ? 'dusk' : 'day');
-      } catch (error) {
-        console.error('[MapView] Error updating light preset:', error);
-      }
+      applyStandardConfig();
     }
-  }, [isDarkMode, currentStyle, isMapReady, hasInitialLoadCompleted]);
+  }, [isDarkMode, currentStyle, isMapReady, hasInitialLoadCompleted, applyStandardConfig]);
   
   // Close style menu when clicking outside
   useEffect(() => {
@@ -344,34 +327,6 @@ export default function MapView({
     return mapping;
   }, [iconColors]);
 
-  // Memoize the Standard style object to prevent recreation on every render
-  const standardStyleObject = useMemo(() => {
-    // Using a minimal style spec that's compatible with Mapbox Standard
-    // The imports property is a Mapbox extension to the standard spec
-    const style = {
-      version: 8,
-      imports: [{
-        id: 'basemap',
-        url: 'mapbox://styles/mapbox/standard',
-        config: {
-          lightPreset: isDarkMode ? 'dusk' : 'day',
-          showPointOfInterestLabels: true,
-          showTransitLabels: true,
-          showPlaceLabels: true,
-          showRoadLabels: true
-        }
-      }],
-      sources: {
-        'mapbox-dem': {
-          type: 'raster-dem',
-          url: 'mapbox://mapbox.terrain-rgb'
-        }
-      },
-      layers: []
-    };
-    // Cast to unknown first to bypass strict type checking for the imports property
-    return style as unknown as StyleSpecification;
-  }, [isDarkMode]);
 
   const layers = [
     // Click marker layer
@@ -530,29 +485,36 @@ export default function MapView({
             ref={(ref) => {
               mapRef.current = ref;
             }}
-            mapStyle={currentStyle === 'standard' ? standardStyleObject : MAP_STYLES[currentStyle].url}
+            mapStyle={MAP_STYLES[currentStyle].url}
             mapboxAccessToken={mapboxToken}
+            projection={{ name: "mercator" }}
             style={{ width: '100%', height: '100%' }}
+            styleDiffing={false}
             onLoad={() => {
               setIsMapReady(true);
-              
-              // No need for complex Standard style configuration since we're setting it initially
-              // Just log that the map is ready
+
+              // Apply Standard config after imports resolve (idle fires after all loading)
               if (currentStyle === 'standard') {
+                const map = mapRef.current?.getMap();
+                if (map) {
+                  map.once('idle', applyStandardConfig);
+                }
               }
             }}
-            fog={{
-              'horizon-blend': 0.02,
-              'color': isDarkMode ? '#242424' : '#ffffff',
-              'high-color': isDarkMode ? '#181818' : '#f8f8f8',
-              'space-color': isDarkMode ? '#000000' : '#d8f2ff',
-              'star-intensity': isDarkMode ? 0.5 : 0.0
-            }}
-            terrain={currentStyle === 'standard' || currentStyle === 'outdoors' ? { source: 'mapbox-dem', exaggeration: 1.5 } : undefined}
+            {...(currentStyle !== 'standard' ? {
+              fog: {
+                'horizon-blend': 0.02,
+                'color': isDarkMode ? '#242424' : '#ffffff',
+                'high-color': isDarkMode ? '#181818' : '#f8f8f8',
+                'space-color': isDarkMode ? '#000000' : '#d8f2ff',
+                'star-intensity': isDarkMode ? 0.5 : 0.0
+              }
+            } : {})}
           />
         ) : (
           <MapGL
             mapStyle={isDarkMode ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" : "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"}
+            projection={{ name: "mercator" }}
             style={{ width: '100%', height: '100%' }}
           />
         )}
