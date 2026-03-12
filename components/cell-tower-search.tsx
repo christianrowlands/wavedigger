@@ -210,7 +210,7 @@ export default function CellTowerSearch({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !isSearching) {
       handleSearch();
     }
@@ -301,7 +301,9 @@ export default function CellTowerSearch({
       {/* Input Grid */}
       <div className={`grid ${compact ? 'grid-cols-2 gap-2' : 'grid-cols-2 gap-3'}`}>
         <div>
+          <label htmlFor="ct-mcc" className="block text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>MCC</label>
           <input
+            id="ct-mcc"
             type="text"
             inputMode="numeric"
             value={mcc}
@@ -309,8 +311,8 @@ export default function CellTowerSearch({
               setMcc(e.target.value.replace(/\D/g, '').slice(0, 3));
               setSearchError(null); // Clear error when user types
             }}
-            onKeyPress={handleKeyPress}
-            placeholder="MCC (e.g., 310)"
+            onKeyDown={handleKeyDown}
+            placeholder="e.g., 310"
             className={inputClass}
             style={{
               backgroundColor: 'var(--bg-secondary)',
@@ -323,7 +325,9 @@ export default function CellTowerSearch({
         </div>
         
         <div>
+          <label htmlFor="ct-mnc" className="block text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>MNC</label>
           <input
+            id="ct-mnc"
             type="text"
             inputMode="numeric"
             value={mnc}
@@ -331,8 +335,8 @@ export default function CellTowerSearch({
               setMnc(e.target.value.replace(/\D/g, '').slice(0, 3));
               setSearchError(null); // Clear error when user types
             }}
-            onKeyPress={handleKeyPress}
-            placeholder="MNC (e.g., 260)"
+            onKeyDown={handleKeyDown}
+            placeholder="e.g., 260"
             className={inputClass}
             style={{
               backgroundColor: 'var(--bg-secondary)',
@@ -345,7 +349,9 @@ export default function CellTowerSearch({
         </div>
         
         <div>
+          <label htmlFor="ct-tac" className="block text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>TAC</label>
           <input
+            id="ct-tac"
             type="text"
             inputMode="numeric"
             value={tacId}
@@ -353,8 +359,8 @@ export default function CellTowerSearch({
               setTacId(e.target.value.replace(/\D/g, '').slice(0, 5));
               setSearchError(null); // Clear error when user types
             }}
-            onKeyPress={handleKeyPress}
-            placeholder="TAC"
+            onKeyDown={handleKeyDown}
+            placeholder="e.g., 12345"
             className={inputClass}
             style={{
               backgroundColor: 'var(--bg-secondary)',
@@ -367,7 +373,9 @@ export default function CellTowerSearch({
         </div>
         
         <div>
+          <label htmlFor="ct-cellid" className="block text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>Cell ID</label>
           <input
+            id="ct-cellid"
             type="text"
             inputMode="numeric"
             value={cellId}
@@ -375,8 +383,8 @@ export default function CellTowerSearch({
               setCellId(e.target.value.replace(/\D/g, ''));
               setSearchError(null); // Clear error when user types
             }}
-            onKeyPress={handleKeyPress}
-            placeholder="Cell ID"
+            onKeyDown={handleKeyDown}
+            placeholder="e.g., 52431"
             className={inputClass}
             style={{
               backgroundColor: 'var(--bg-secondary)',
@@ -385,6 +393,7 @@ export default function CellTowerSearch({
             }}
             disabled={isSearching}
             title="Cell Tower ID"
+            aria-label="Cell Tower ID"
           />
         </div>
       </div>
@@ -396,7 +405,8 @@ export default function CellTowerSearch({
           id="includeSurrounding"
           checked={includeSurrounding}
           onChange={(e) => setIncludeSurrounding(e.target.checked)}
-        className="rounded border-gray-300"
+        className="rounded"
+          style={{ borderColor: 'var(--border-primary)', accentColor: 'var(--color-primary-500)' }}
           disabled={isSearching}
         />
         <label 
@@ -582,7 +592,7 @@ export default function CellTowerSearch({
         <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Enter LTE cell tower parameters. Use{' '}
           <a 
-            href="https://www.networksurvey.app/"
+            href="https://networksurvey.app/android"
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleNetworkSurveyClick}

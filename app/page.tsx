@@ -23,8 +23,8 @@ import { formatCellTowerInfo, isCellTowerLabel, parseCellTowerInfo } from '@/lib
 const MapView = dynamic(() => import('@/components/map-view'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full bg-gray-100 animate-pulse flex items-center justify-center">
-      <p className="text-gray-500">Loading map...</p>
+    <div className="w-full h-full animate-pulse flex items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}>
+      <p style={{ color: 'var(--text-tertiary)' }}>Loading map...</p>
     </div>
   ),
 });
@@ -365,15 +365,16 @@ function HomeContent() {
 
   const handleLocationSearchResults = useCallback((results: BSSIDSearchResult[]) => {
     const newMarkers: MapMarker[] = results.map((result, index) => ({
-      id: `${result.bssid}-${Date.now()}-${index}`,
+      id: `loc-${result.bssid}-${Date.now()}-${index}`,
       bssid: result.bssid,
       position: [result.location.longitude, result.location.latitude],
       location: result.location,
       source: result.source,
       accuracy: result.accuracy
     }));
-    
-    setMarkers(prev => [...prev, ...newMarkers]);
+
+    // Replace previous location search markers instead of appending
+    setMarkers(prev => [...prev.filter(m => !m.id.startsWith('loc-')), ...newMarkers]);
     
     // Do NOT add to search history for location searches
     
@@ -608,6 +609,7 @@ function HomeContent() {
                 }}
                 disabled={markers.length === 0}
                 title="Clear all markers"
+                aria-label="Clear all markers"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1034,7 +1036,7 @@ function HomeContent() {
         </div>
 
         {/* Map */}
-        <div className="flex-1 relative mobile-no-overscroll">
+        <div className="flex-1 relative mobile-no-overscroll" style={{ cursor: activeTab === 'location' ? 'crosshair' : undefined }}>
           <MapView
             markers={markers}
             onMarkerClick={handleMarkerClick}

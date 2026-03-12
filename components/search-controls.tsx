@@ -65,6 +65,7 @@ export default function SearchControls({
         fontWeight: isMultiMode ? '600' : '500'
       }}
       title={isMultiMode ? 'Switch to single BSSID mode' : 'Switch to multi BSSID mode'}
+      aria-label={isMultiMode ? 'Switch to single BSSID mode' : 'Switch to multi BSSID mode'}
     >
       {isMultiMode ? (
         <ToggleRight className="h-4 w-4" style={{ color: 'var(--color-primary-600)' }} />
@@ -152,7 +153,7 @@ export default function SearchControls({
             }}
           >
             <Signal className="h-3.5 w-3.5" />
-            <span className="text-xs">Cell</span>
+            <span className="text-xs">Tower</span>
           </button>
         </div>
         

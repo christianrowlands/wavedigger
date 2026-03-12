@@ -213,14 +213,24 @@ export default function MobileSheet({
         }}
       >
         {/* Drag Handle */}
-        <div 
+        <div
           ref={dragHandleRef}
+          role="button"
+          tabIndex={0}
+          aria-label={`Bottom sheet, ${sheetState === 'closed' ? 'collapsed' : sheetState === 'peek' ? 'partially expanded' : 'fully expanded'}. Drag or press to toggle.`}
+          aria-expanded={sheetState !== 'closed'}
           className="drag-handle relative flex flex-col items-center py-3 cursor-grab active:cursor-grabbing select-none"
           style={{ touchAction: 'none' }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerCancel}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleExpanded();
+            }
+          }}
         >
           <div className="w-12 h-1.5 rounded-full" style={{ 
             backgroundColor: isDragging ? 'var(--color-primary-500)' : 'var(--text-tertiary)',
@@ -229,22 +239,22 @@ export default function MobileSheet({
           }} />
           {/* State indicator dots */}
           <div className="flex gap-1 mt-1">
-            <div 
-              className="w-1.5 h-1.5 rounded-full transition-all"
+            <div
+              className="w-2 h-2 rounded-full transition-all"
               style={{ 
                 backgroundColor: sheetState === 'closed' ? 'var(--color-primary-500)' : 'var(--text-tertiary)',
                 opacity: sheetState === 'closed' ? 1 : 0.3
               }} 
             />
-            <div 
-              className="w-1.5 h-1.5 rounded-full transition-all"
+            <div
+              className="w-2 h-2 rounded-full transition-all"
               style={{ 
                 backgroundColor: sheetState === 'peek' ? 'var(--color-primary-500)' : 'var(--text-tertiary)',
                 opacity: sheetState === 'peek' ? 1 : 0.3
               }} 
             />
-            <div 
-              className="w-1.5 h-1.5 rounded-full transition-all"
+            <div
+              className="w-2 h-2 rounded-full transition-all"
               style={{ 
                 backgroundColor: sheetState === 'full' ? 'var(--color-primary-500)' : 'var(--text-tertiary)',
                 opacity: sheetState === 'full' ? 1 : 0.3

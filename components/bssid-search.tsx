@@ -119,8 +119,8 @@ export default function BSSIDSearch({
         return updated.slice(0, 5); // Keep only last 5 searches
       });
       
-      // Clear input after successful search
-      setInput('');
+      // Keep the searched BSSID in the input field
+      setInput(validation.normalized!);
       
       // Handle response based on whether we got single or multiple results
       if (data.results && Array.isArray(data.results)) {
@@ -202,7 +202,7 @@ export default function BSSIDSearch({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !isLoading) {
       handleSearch();
     }
@@ -217,28 +217,30 @@ export default function BSSIDSearch({
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex gap-1 sm:gap-2">
+      <div className="flex gap-2">
         {mobileToggle && <div className="lg:hidden">{mobileToggle}</div>}
         <Input
           type="text"
-          placeholder={isLoadingFromUrl ? "Loading shared BSSID..." : "Enter BSSID"}
+          placeholder={isLoadingFromUrl ? "Loading shared BSSID..." : "e.g. AA:BB:CC:DD:EE:FF"}
           value={isLoadingFromUrl && urlBssid ? urlBssid : input}
           onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           disabled={isLoading || isLoadingFromUrl}
+          aria-label="BSSID address"
           className={`flex-1 min-w-0 ${error ? 'border-red-500' : ''} ${isLoadingFromUrl ? 'animate-pulse' : ''}`}
           variant="modern"
         />
         <button 
           onClick={() => handleSearch()} 
           disabled={isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl}
-          className={`btn-primary flex items-center justify-center px-2 sm:px-3 flex-shrink-0 ${isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`btn-primary flex items-center justify-center px-2 sm:px-3 flex-shrink-0 ${isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl ? 'cursor-not-allowed' : ''}`}
           style={{
             background: isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl ? 'var(--bg-tertiary)' : undefined,
             color: isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl ? 'var(--text-tertiary)' : undefined,
             boxShadow: isLoading || (!input.trim() && !isLoadingFromUrl) || isLoadingFromUrl ? 'none' : undefined
           }}
           title={isLoadingFromUrl ? 'Loading shared BSSID...' : isLoading ? 'Searching...' : 'Search for BSSID'}
+          aria-label={isLoadingFromUrl ? 'Loading shared BSSID' : isLoading ? 'Searching' : 'Search for BSSID'}
         >
           {isLoadingFromUrl || isLoading ? (
             <>
@@ -308,7 +310,7 @@ export default function BSSIDSearch({
       
       {recentSearches.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs text-gray-600">Recent:</p>
+          <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Recent:</p>
           <div className="flex flex-wrap gap-2">
             {recentSearches.map((bssid, index) => (
               <button

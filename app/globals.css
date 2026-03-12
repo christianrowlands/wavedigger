@@ -58,6 +58,7 @@
   --color-warning-light: hsl(38, 100%, 94%);
   --color-warning: hsl(38, 95%, 52%);
   --color-warning-dark: hsl(38, 93%, 42%);
+  --color-warning-border: hsl(38, 80%, 75%);
   
   --color-error-light: hsl(348, 86%, 94%);
   --color-error: hsl(348, 83%, 58%);
@@ -212,10 +213,23 @@
   --font-mono: var(--font-mono);
 }
 
-/* Smooth transition for theme changes */
-* {
-  transition: background-color var(--transition-base), 
-              color var(--transition-base), 
+/* Smooth transition for theme changes on interactive elements */
+button,
+a,
+input,
+select,
+textarea,
+[role="tab"],
+[role="button"],
+.glass-card,
+.gradient-card-1,
+.gradient-card-2,
+.gradient-card-3,
+.btn-primary,
+.btn-secondary,
+.btn-accent {
+  transition: background-color var(--transition-base),
+              color var(--transition-base),
               border-color var(--transition-base);
 }
 
@@ -297,6 +311,8 @@ html {
   /* Link colors - lighter for better readability */
   --color-link: var(--color-secondary-400);
   
+  --color-warning-border: hsl(38, 60%, 45%);
+
   /* Adjust shadows for dark theme */
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.1);
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.2), 0 1px 2px -1px rgb(0 0 0 / 0.2);
@@ -561,13 +577,15 @@ html {
   transition: left 0.5s;
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-xl);
-}
+@media (hover: hover) {
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+  }
 
-.btn-primary:hover::before {
-  left: 100%;
+  .btn-primary:hover::before {
+    left: 100%;
+  }
 }
 
 .btn-primary:active {
@@ -586,9 +604,11 @@ html {
   border: 1px solid transparent;
 }
 
-.btn-secondary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-xl);
+@media (hover: hover) {
+  .btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+  }
 }
 
 .btn-accent {
@@ -602,9 +622,11 @@ html {
   border: 1px solid transparent;
 }
 
-.btn-accent:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-xl);
+@media (hover: hover) {
+  .btn-accent:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-xl);
+  }
 }
 
 /* Modern Card Styles */
@@ -627,17 +649,19 @@ html {
   transition: opacity var(--transition-base);
 }
 
-.card-hover:hover::before {
-  opacity: 1;
-}
+@media (hover: hover) {
+  .card-hover:hover::before {
+    opacity: 1;
+  }
 
-.card-hover:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 12px 24px 0 rgba(0, 0, 0, 0.1);
-}
+  .card-hover:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 12px 24px 0 rgba(0, 0, 0, 0.1);
+  }
 
-[data-theme="dark"] .card-hover:hover {
-  box-shadow: 0 12px 24px 0 rgba(0, 0, 0, 0.3);
+  [data-theme="dark"] .card-hover:hover {
+    box-shadow: 0 12px 24px 0 rgba(0, 0, 0, 0.3);
+  }
 }
 
 /* Subtle animations */

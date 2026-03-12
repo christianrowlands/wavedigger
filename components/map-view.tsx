@@ -10,6 +10,7 @@ import type { PickingInfo, FlyToInterpolator as FlyToInterpolatorType } from '@d
 import type { ViewState, MapMarker } from '@/types';
 import { getMapIcon } from './map-icons';
 import { formatBSSIDForDisplay } from '@/lib/bssid-utils';
+import { parseCellTowerInfo } from '@/lib/cell-tower-utils';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { AnalyticsEvents } from '@/lib/analytics';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -242,11 +243,15 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flyToLocation, isMapReady]); // Intentionally not including viewState and onFlyToComplete to avoid loops
 
+  const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+
   const handleHover = useCallback((info: PickingInfo) => {
     if (info.object) {
       setHoveredMarker(info.object as MapMarker);
+      setHoverPosition({ x: info.x ?? 0, y: info.y ?? 0 });
     } else {
       setHoveredMarker(null);
+      setHoverPosition(null);
     }
   }, []);
 
@@ -386,8 +391,8 @@ export default function MapView({
       lineWidthMinPixels: 2,
       getPosition: (d: { position: [number, number] }) => d.position,
       getRadius: (d: { size: number }) => d.size,
-      getFillColor: [59, 130, 246, 100], // Blue with transparency
-      getLineColor: [59, 130, 246, 255], // Solid blue border
+      getFillColor: isDarkMode ? [96, 165, 250, 100] : [59, 130, 246, 100],
+      getLineColor: isDarkMode ? [96, 165, 250, 255] : [59, 130, 246, 255],
     }),
     
     // Regular AP markers
@@ -446,39 +451,59 @@ export default function MapView({
   ].filter(Boolean);
 
   const renderTooltip = () => {
-    if (!hoveredMarker) return null;
+    if (!hoveredMarker || !hoverPosition) return null;
+
+    const isCellTower = hoveredMarker.type === 'cell';
+    const towerInfo = isCellTower ? parseCellTowerInfo(hoveredMarker.bssid) : null;
 
     return (
-      <div 
+      <div
         className="absolute z-10 pointer-events-none glass px-4 py-3 animate-fadeIn"
         style={{
-          left: '50%',
-          top: '50%',
+          left: hoverPosition.x,
+          top: hoverPosition.y,
           transform: 'translate(-50%, -120%)',
           borderRadius: 'var(--radius-lg)',
           boxShadow: 'var(--shadow-xl)'
         }}
       >
         <div className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-          {formatBSSIDForDisplay(hoveredMarker.bssid)}
+          {isCellTower && towerInfo ? (
+            <span>{towerInfo.carrier}</span>
+          ) : (
+            formatBSSIDForDisplay(hoveredMarker.bssid)
+          )}
           {hoveredMarker.source === 'china' && (
-            <span className="ml-2 text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
-              backgroundColor: '#EE1C25', 
-              color: 'white' 
+            <span className="ml-2 text-xs font-normal px-1.5 py-0.5 rounded" style={{
+              backgroundColor: '#EE1C25',
+              color: 'white'
             }}>
               CN
             </span>
           )}
         </div>
         <div className="space-y-0.5">
-          <div className="text-xs flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
-            <span style={{ color: 'var(--text-tertiary)' }}>Lat:</span>
-            <span className="font-mono">{hoveredMarker.location.latitude.toFixed(6)}</span>
-          </div>
-          <div className="text-xs flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
-            <span style={{ color: 'var(--text-tertiary)' }}>Lng:</span>
-            <span className="font-mono">{hoveredMarker.location.longitude.toFixed(6)}</span>
-          </div>
+          {isCellTower && towerInfo ? (
+            <>
+              <div className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
+                MCC:{towerInfo.mcc} MNC:{towerInfo.mnc}
+              </div>
+              <div className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
+                TAC:{towerInfo.tacId} Cell:{towerInfo.cellId}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-xs flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+                <span style={{ color: 'var(--text-tertiary)' }}>Lat:</span>
+                <span className="font-mono">{hoveredMarker.location.latitude.toFixed(6)}</span>
+              </div>
+              <div className="text-xs flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+                <span style={{ color: 'var(--text-tertiary)' }}>Lng:</span>
+                <span className="font-mono">{hoveredMarker.location.longitude.toFixed(6)}</span>
+              </div>
+            </>
+          )}
           {hoveredMarker.source === 'china' && (
             <div className="text-xs pt-1" style={{ color: 'var(--text-tertiary)' }}>
               Source: China Database
@@ -547,6 +572,7 @@ export default function MapView({
                 boxShadow: 'var(--shadow-md)'
               }}
               title="Change map style"
+              aria-label="Change map style"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />

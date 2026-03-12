@@ -110,13 +110,16 @@ export default function CopyButton({
   return (
     <button
       onClick={handleCopy}
-      className={`${buttonSize} rounded transition-all hover:scale-110 glass-card flex items-center justify-center ${className}`}
+      className={`${buttonSize} rounded transition-all hover:scale-110 glass-card flex items-center justify-center relative ${className}`}
       title={`Copy ${label.toLowerCase()}`}
-      style={{ 
+      aria-label={`Copy ${label.toLowerCase()}`}
+      style={{
         color: copied ? 'var(--color-success)' : 'var(--text-tertiary)',
         background: 'var(--bg-tertiary)'
       }}
     >
+      {/* Expanded touch target for mobile */}
+      <span className="absolute inset-0 -m-2 sm:-m-1 pointer-events-none" aria-hidden="true" />
       {copied ? (
         <Check className={iconSize} />
       ) : (

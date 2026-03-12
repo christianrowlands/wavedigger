@@ -80,7 +80,7 @@ export interface BSSIDValidationResult {
 
 export function validateAndNormalizeBSSID(input: string): BSSIDValidationResult {
   const trimmed = input.trim();
-  
+
   if (!trimmed) {
     return {
       isValid: false,
@@ -88,9 +88,18 @@ export function validateAndNormalizeBSSID(input: string): BSSIDValidationResult 
       error: 'BSSID cannot be empty'
     };
   }
-  
-  const normalized = normalizeBSSID(trimmed);
-  
+
+  let normalized = normalizeBSSID(trimmed);
+
+  // Fallback: try padding shortened octets (e.g., "9c:5:d6:43:3d:62")
+  if (!normalized) {
+    const parts = trimmed.split(/[:\-]/);
+    if (parts.length === 6 && parts.every(p => /^[0-9A-Fa-f]{1,2}$/.test(p))) {
+      const padded = parts.map(p => p.padStart(2, '0')).join(':');
+      normalized = normalizeBSSID(padded);
+    }
+  }
+
   if (!normalized) {
     return {
       isValid: false,
@@ -98,7 +107,7 @@ export function validateAndNormalizeBSSID(input: string): BSSIDValidationResult 
       error: 'Invalid BSSID format. Expected 12 hexadecimal digits (e.g., AA:BB:CC:DD:EE:FF)'
     };
   }
-  
+
   return {
     isValid: true,
     normalized

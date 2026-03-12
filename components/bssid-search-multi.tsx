@@ -82,6 +82,7 @@ export default function MultiBSSIDSearch({
     
     if (bssids.length > 1) {
       // Multiple BSSIDs pasted
+      const truncated = bssids.length > maxBSSIDs;
       const newInputs: BSSIDInput[] = bssids.slice(0, maxBSSIDs).map((bssid, index) => {
         const validation = validateAndNormalizeBSSID(bssid);
         return {
@@ -91,8 +92,12 @@ export default function MultiBSSIDSearch({
           error: validation.error
         };
       });
-      
+
       setInputs(newInputs);
+
+      if (truncated) {
+        setError(`Only the first ${maxBSSIDs} of ${bssids.length} pasted BSSIDs were kept (maximum ${maxBSSIDs}).`);
+      }
     } else if (bssids.length === 1) {
       // Single BSSID pasted
       handleInputChange(inputs[0].id, bssids[0]);
@@ -167,7 +172,7 @@ export default function MultiBSSIDSearch({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !isLoading) {
       handleSearch();
     }
@@ -183,8 +188,8 @@ export default function MultiBSSIDSearch({
               placeholder="Enter BSSID (e.g., AA:BB:CC:DD:EE:FF)"
               value={input.value}
               onChange={(e) => handleInputChange(input.id, e.target.value)}
-              onKeyPress={handleKeyPress}
-              onPaste={index === 0 ? handlePaste : undefined}
+              onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
               disabled={isLoading}
               variant="modern"
               style={{

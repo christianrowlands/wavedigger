@@ -94,6 +94,7 @@ export default function ThemeToggle() {
         color: 'var(--text-primary)'
       }}
       title={`Current theme: ${getLabel()}`}
+      aria-label={`Toggle theme, current: ${getLabel()}`}
     >
       {getIcon()}
       <span className="text-sm font-medium">{getLabel()}</span>
