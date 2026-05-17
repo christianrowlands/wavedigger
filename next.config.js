@@ -5,7 +5,7 @@ const nextConfig = {
   
   // Experimental features for better map performance
   experimental: {
-    optimizePackageImports: ['mapbox-gl', 'react-map-gl', '@deck.gl/react']
+    optimizePackageImports: ['mapbox-gl', 'react-map-gl/mapbox', '@deck.gl/react']
   }
 };
 

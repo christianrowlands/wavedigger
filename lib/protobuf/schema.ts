@@ -215,7 +215,7 @@ export const WLOC_API_ENDPOINTS = {
 };
 
 // Serialize protobuf message with initial bytes prefix
-export function serializeRequest(wlocData: IAppleWLoc): Buffer {
+export function serializeRequest(wlocData: IAppleWLoc): Uint8Array<ArrayBuffer> {
   
   // Build the protobuf data structure properly
   // IMPORTANT: protobufjs expects camelCase field names, not snake_case
@@ -276,8 +276,11 @@ export function serializeRequest(wlocData: IAppleWLoc): Buffer {
     lengthByte,
     Buffer.from(encodedMessage)
   ]);
-  
-  return fullRequest;
+
+  // Copy into a fresh ArrayBuffer-backed Uint8Array so it satisfies DOM BodyInit
+  const out = new Uint8Array(new ArrayBuffer(fullRequest.length));
+  out.set(fullRequest);
+  return out;
 }
 
 // Parse response (skip first 10 bytes)

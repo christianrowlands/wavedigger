@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
-import { Map as MapGL } from 'react-map-gl';
+import { Map as MapGL } from 'react-map-gl/mapbox';
 import { IconLayer, ScatterplotLayer } from '@deck.gl/layers';
 import { FlyToInterpolator } from '@deck.gl/core';
 import type { PickingInfo, FlyToInterpolator as FlyToInterpolatorType } from '@deck.gl/core';
