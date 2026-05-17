@@ -88,3 +88,7 @@ Note: Not all BSSIDs are in Apple's database. Newly deployed or private access p
 
 - **Cell Tower Tracking**: Find cell tower locations
 - **Export Results**: Download search results as JSON/CSV
+
+## License
+
+WaveDigger is licensed under the [GNU Affero General Public License v3.0](LICENSE). If you run a modified version of this software as a network service, the AGPL requires you to make your modified source code available to users of that service.
