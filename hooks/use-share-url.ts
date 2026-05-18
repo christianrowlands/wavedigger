@@ -7,12 +7,16 @@ interface ShareUrlOptions {
   longitude?: number;
   zoom?: number;
   mode?: 'single' | 'multi';
-  // Cell tower parameters
+  // Cell tower parameters (LTE)
   mcc?: number;
   mnc?: number;
   tac?: number;
   cellId?: number;
   returnAll?: boolean;
+  // NR cell parameters (radio === 'nr'). nci is a decimal string to preserve
+  // int64 semantics in URLs.
+  nci?: string;
+  radio?: 'lte' | 'nr';
   tab?: 'bssid' | 'location' | 'celltower';
 }
 
@@ -20,19 +24,27 @@ export function useShareUrl() {
   const generateShareUrl = useCallback((options: ShareUrlOptions): string => {
     const params = new URLSearchParams();
     
-    // Check if this is a cell tower share (has MCC/MNC/TAC/CellID)
-    if (options.mcc !== undefined && options.mnc !== undefined && 
+    // NR cell tower share (has MCC/MNC/TAC/NCI)
+    if (options.radio === 'nr' && options.mcc !== undefined && options.mnc !== undefined &&
+        options.tac !== undefined && options.nci !== undefined) {
+      params.set('mcc', options.mcc.toString());
+      params.set('mnc', options.mnc.toString());
+      params.set('tac', options.tac.toString());
+      params.set('nci', options.nci);
+      params.set('radio', 'nr');
+      params.set('tab', 'celltower');
+    } else if (options.mcc !== undefined && options.mnc !== undefined &&
         options.tac !== undefined && options.cellId !== undefined) {
-      // Cell tower parameters
+      // LTE cell tower share
       params.set('mcc', options.mcc.toString());
       params.set('mnc', options.mnc.toString());
       params.set('tac', options.tac.toString());
       params.set('cellId', options.cellId.toString());
-      
+
       if (options.returnAll !== undefined) {
         params.set('returnAll', options.returnAll.toString());
       }
-      
+
       // Set tab to celltower for cell tower shares
       params.set('tab', 'celltower');
     } else if (options.bssid) {

@@ -16,8 +16,15 @@ import { useShareUrl } from '@/hooks/use-share-url';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { AnalyticsEvents } from '@/lib/analytics';
 import { formatBSSIDForURL, parseBSSIDFromURL, formatBSSIDForDisplay, normalizeBSSIDForComparison } from '@/lib/bssid-utils';
-import type { BSSIDSearchResult, MapMarker, CellTowerSearchResult } from '@/types';
-import { formatCellTowerInfo, isCellTowerLabel, parseCellTowerInfo } from '@/lib/cell-tower-utils';
+import type { BSSIDSearchResult, MapMarker, CellTowerSearchResult, NrCellTowerSearchResult } from '@/types';
+import {
+  formatCellTowerInfo,
+  isCellTowerLabel,
+  parseCellTowerInfo,
+  formatNrCellTowerInfo,
+  isNrCellTowerLabel,
+  parseNrCellTowerInfo,
+} from '@/lib/cell-tower-utils';
 
 // Dynamic import for deck.gl to avoid SSR issues
 const MapView = dynamic(() => import('@/components/map-view'), {
@@ -41,12 +48,19 @@ function HomeContent() {
   const [activeTab, setActiveTab] = useState<'bssid' | 'location' | 'celltower'>('bssid');
   const [clickedLocation, setClickedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isLocationSearching, setIsLocationSearching] = useState(false);
-  const [selectedTowerParams, setSelectedTowerParams] = useState<{ 
-    mcc: string; 
-    mnc: string; 
-    tac: string; 
-    cellId: string; 
+  const [selectedTowerParams, setSelectedTowerParams] = useState<{
+    mcc: string;
+    mnc: string;
+    tac: string;
+    cellId: string;
   } | null>(null);
+  const [selectedNrTowerParams, setSelectedNrTowerParams] = useState<{
+    mcc: string;
+    mnc: string;
+    tac: string;
+    nci: string;
+  } | null>(null);
+  const [cellTowerRadio, setCellTowerRadio] = useState<'lte' | 'nr'>('lte');
   const [shouldCloseSheet, setShouldCloseSheet] = useState(false);
   const [hasUrlLoadedTowerResults, setHasUrlLoadedTowerResults] = useState(false);
   
@@ -63,13 +77,15 @@ function HomeContent() {
     mnc?: number;
     tac?: number;
     cellId?: number;
+    nci?: string;
+    radio?: 'lte' | 'nr';
     returnAll?: boolean;
     tab?: string;
     clearTower?: boolean;
   }) => {
     // Start with existing search params to preserve them
     const params = new URLSearchParams(searchParams.toString());
-    
+
     // Handle BSSID parameter
     if (options?.bssid) {
       // Format BSSID with hyphens for cleaner URLs
@@ -79,18 +95,33 @@ function HomeContent() {
       params.delete('mnc');
       params.delete('tac');
       params.delete('cellId');
+      params.delete('nci');
+      params.delete('radio');
       params.delete('returnAll');
     } else if (!options?.bssid && params.has('bssid')) {
       params.delete('bssid');
     }
-    
-    // Handle cell tower parameters
-    if (options?.mcc !== undefined && options?.mnc !== undefined && 
+
+    // Handle NR cell parameters
+    if (options?.radio === 'nr' && options?.mcc !== undefined && options?.mnc !== undefined &&
+        options?.tac !== undefined && options?.nci !== undefined) {
+      params.set('mcc', options.mcc.toString());
+      params.set('mnc', options.mnc.toString());
+      params.set('tac', options.tac.toString());
+      params.set('nci', options.nci);
+      params.set('radio', 'nr');
+      params.delete('cellId');
+      params.delete('returnAll');
+      params.delete('bssid');
+    } else if (options?.mcc !== undefined && options?.mnc !== undefined &&
         options?.tac !== undefined && options?.cellId !== undefined) {
+      // LTE cell tower parameters
       params.set('mcc', options.mcc.toString());
       params.set('mnc', options.mnc.toString());
       params.set('tac', options.tac.toString());
       params.set('cellId', options.cellId.toString());
+      params.delete('nci');
+      params.delete('radio');
       if (options.returnAll !== undefined) {
         params.set('returnAll', options.returnAll.toString());
       }
@@ -101,6 +132,8 @@ function HomeContent() {
       params.delete('mnc');
       params.delete('tac');
       params.delete('cellId');
+      params.delete('nci');
+      params.delete('radio');
       params.delete('returnAll');
     }
     
@@ -363,6 +396,114 @@ function HomeContent() {
     }
   }, [updateUrl, isLoadingFromUrl]);
 
+  const handleNrCellTowerSearchResults = useCallback((results: NrCellTowerSearchResult[], searchParams?: {
+    mcc: number;
+    mnc: number;
+    tac: number;
+    nci: string;
+  }) => {
+    const newMarkers: MapMarker[] = results.map((result, index) => {
+      const towerLabel = formatNrCellTowerInfo(
+        result.tower.mcc,
+        result.tower.mnc,
+        result.tower.nci,
+        result.tower.tac,
+        result.tower.nrArfcn,
+      );
+      return {
+        id: `nrcell-${result.tower.nci}-${Date.now()}-${index}`,
+        bssid: towerLabel,
+        position: [result.location.longitude, result.location.latitude],
+        location: result.location,
+        source: result.source,
+        accuracy: result.accuracy,
+        type: 'cell' as const,
+      };
+    });
+
+    setMarkers(newMarkers);
+
+    // Select the primary match (the row whose NCI matches the user's query)
+    // if present, otherwise the first row.
+    const primaryIdx = results.findIndex(r => r.isPrimary);
+    const selectIdx = primaryIdx >= 0 ? primaryIdx : 0;
+    if (newMarkers.length > 0) {
+      setSelectedMarker(newMarkers[selectIdx]);
+      const info = parseNrCellTowerInfo(newMarkers[selectIdx].bssid);
+      if (info) {
+        setSelectedNrTowerParams({
+          mcc: info.mcc.toString(),
+          mnc: info.mnc.toString(),
+          tac: info.tac.toString(),
+          nci: info.nci,
+        });
+      }
+      setSelectedTowerParams(null);
+    } else {
+      setSelectedMarker(null);
+      setSelectedNrTowerParams(null);
+    }
+
+    if (results.length > 0) {
+      const lats = results.map(r => r.location.latitude);
+      const lngs = results.map(r => r.location.longitude);
+      const bounds = {
+        minLat: Math.min(...lats),
+        maxLat: Math.max(...lats),
+        minLng: Math.min(...lngs),
+        maxLng: Math.max(...lngs),
+      };
+      const centerLat = (bounds.minLat + bounds.maxLat) / 2;
+      const centerLng = (bounds.minLng + bounds.maxLng) / 2;
+      const span = Math.max(bounds.maxLat - bounds.minLat, bounds.maxLng - bounds.minLng);
+      let zoom = 16;
+      if (span > 0.5) zoom = 8;
+      else if (span > 0.2) zoom = 10;
+      else if (span > 0.1) zoom = 11;
+      else if (span > 0.05) zoom = 12;
+      else if (span > 0.02) zoom = 13;
+      else if (span > 0.01) zoom = 14;
+      else if (span > 0.005) zoom = 15;
+      setFlyToLocation({ longitude: centerLng, latitude: centerLat, zoom });
+    }
+
+    // History entry: the primary row, or the first row.
+    if (results.length > 0) {
+      const primary = results[selectIdx];
+      const towerLabel = formatNrCellTowerInfo(
+        primary.tower.mcc,
+        primary.tower.mnc,
+        primary.tower.nci,
+        primary.tower.tac,
+        primary.tower.nrArfcn,
+      );
+      const historyItem: BSSIDSearchResult = {
+        bssid: towerLabel,
+        location: primary.location,
+        accuracy: primary.accuracy,
+        timestamp: new Date().toISOString(),
+        source: primary.source,
+      };
+      setCellTowerSearchHistory(prev => {
+        const newHistory = [historyItem, ...prev.filter(item => item.bssid !== towerLabel)].slice(0, 20);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('cellTowerSearchHistory', JSON.stringify(newHistory));
+        }
+        return newHistory;
+      });
+    }
+
+    if (searchParams && !isLoadingFromUrl) {
+      updateUrl({
+        mcc: searchParams.mcc,
+        mnc: searchParams.mnc,
+        tac: searchParams.tac,
+        nci: searchParams.nci,
+        radio: 'nr',
+      });
+    }
+  }, [updateUrl, isLoadingFromUrl]);
+
   const handleLocationSearchStart = useCallback(() => setIsLocationSearching(true), []);
   const handleLocationSearchEnd = useCallback(() => setIsLocationSearching(false), []);
 
@@ -406,20 +547,37 @@ function HomeContent() {
 
   const handleMarkerClick = useCallback((marker: MapMarker) => {
     setSelectedMarker(marker);
-    
+
     // If it's a cell tower, extract and set the tower parameters for auto-populate
     if (marker.type === 'cell') {
-      const towerInfo = parseCellTowerInfo(marker.bssid);
-      if (towerInfo) {
-        setSelectedTowerParams({
-          mcc: towerInfo.mcc.toString(),
-          mnc: towerInfo.mnc.toString(),
-          tac: towerInfo.tacId.toString(),
-          cellId: towerInfo.cellId.toString()
-        });
+      if (isNrCellTowerLabel(marker.bssid)) {
+        const info = parseNrCellTowerInfo(marker.bssid);
+        if (info) {
+          setSelectedNrTowerParams({
+            mcc: info.mcc.toString(),
+            mnc: info.mnc.toString(),
+            tac: info.tac.toString(),
+            nci: info.nci,
+          });
+          setCellTowerRadio('nr');
+        }
+        setSelectedTowerParams(null);
+      } else {
+        const towerInfo = parseCellTowerInfo(marker.bssid);
+        if (towerInfo) {
+          setSelectedTowerParams({
+            mcc: towerInfo.mcc.toString(),
+            mnc: towerInfo.mnc.toString(),
+            tac: towerInfo.tacId.toString(),
+            cellId: towerInfo.cellId.toString()
+          });
+          setCellTowerRadio('lte');
+        }
+        setSelectedNrTowerParams(null);
       }
     } else {
       setSelectedTowerParams(null);
+      setSelectedNrTowerParams(null);
     }
   }, []);
 
@@ -468,22 +626,62 @@ function HomeContent() {
     const mncParam = searchParams.get('mnc');
     const tacParam = searchParams.get('tac');
     const cellIdParam = searchParams.get('cellId');
+    const nciParam = searchParams.get('nci');
+    const radioParam = searchParams.get('radio');
     const returnAllParam = searchParams.get('returnAll');
-    
+
     // Set tab if provided
     if (tabParam && (tabParam === 'bssid' || tabParam === 'location' || tabParam === 'celltower')) {
       setActiveTab(tabParam);
     }
-    
+
     if (modeParam === 'multi') {
       setIsMultiMode(true);
     }
-    
-    // Handle cell tower search from URL
-    if (mccParam && mncParam && tacParam && cellIdParam && !hasProcessedUrl.current) {
+
+    // NR cell search from URL (radio=nr + nci) takes precedence over LTE.
+    if (radioParam === 'nr' && mccParam && mncParam && tacParam && nciParam && !hasProcessedUrl.current) {
       hasProcessedUrl.current = true;
       setIsLoadingFromUrl(true);
-      
+      setCellTowerRadio('nr');
+
+      const searchNrCell = async () => {
+        try {
+          const response = await fetch('/api/cell-tower', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              radio: 'nr',
+              mcc: parseInt(mccParam, 10),
+              mnc: parseInt(mncParam, 10),
+              tac: parseInt(tacParam, 10),
+              nci: nciParam,
+            }),
+          });
+          const data = await response.json();
+          if (response.ok && data.results) {
+            handleNrCellTowerSearchResults(data.results, {
+              mcc: parseInt(mccParam, 10),
+              mnc: parseInt(mncParam, 10),
+              tac: parseInt(tacParam, 10),
+              nci: nciParam,
+            });
+            setActiveTab('celltower');
+            setHasUrlLoadedTowerResults(true);
+          }
+        } catch (error) {
+          console.error('Error loading shared NR cell:', error);
+        } finally {
+          setIsLoadingFromUrl(false);
+        }
+      };
+
+      searchNrCell();
+    } else if (mccParam && mncParam && tacParam && cellIdParam && !hasProcessedUrl.current) {
+      // Handle LTE cell tower search from URL
+      hasProcessedUrl.current = true;
+      setIsLoadingFromUrl(true);
+
       const searchCellTower = async () => {
         try {
           const params = new URLSearchParams({
@@ -493,10 +691,10 @@ function HomeContent() {
             cellId: cellIdParam,
             returnAll: returnAllParam === 'true' ? 'true' : 'false'
           });
-          
+
           const response = await fetch(`/api/cell-tower?${params}`);
           const data = await response.json();
-          
+
           if (response.ok && data.results) {
             // Handle the cell tower results
             handleCellTowerSearchResults(data.results, {
@@ -506,7 +704,7 @@ function HomeContent() {
               cellId: parseInt(cellIdParam, 10),
               returnAll: returnAllParam === 'true'
             });
-            
+
             // Set tab to cell tower if not already set
             setActiveTab('celltower');
             // Mark that we loaded tower results from URL
@@ -576,7 +774,7 @@ function HomeContent() {
       
       searchBssid();
     }
-  }, [searchParams, handleManualSearchResult, handleCellTowerSearchResults, logEvent]);
+  }, [searchParams, handleManualSearchResult, handleCellTowerSearchResults, handleNrCellTowerSearchResults, logEvent]);
 
   return (
     <div className="h-full flex flex-col gradient-mesh-vibrant mobile-no-overscroll" style={{ background: 'var(--bg-primary)', position: 'fixed', inset: 0 }}>
@@ -650,7 +848,11 @@ function HomeContent() {
               isLocationSearching={isLocationSearching}
               clickedLocation={clickedLocation}
               selectedTowerParams={selectedTowerParams}
+              selectedNrTowerParams={selectedNrTowerParams}
               hasUrlLoadedTowerResults={hasUrlLoadedTowerResults}
+              cellTowerRadio={cellTowerRadio}
+              onCellTowerRadioChange={setCellTowerRadio}
+              onNrCellTowerSearchResults={handleNrCellTowerSearchResults}
             />
 
             {/* Selected Marker Info */}
@@ -668,10 +870,25 @@ function HomeContent() {
                       </span>
                     )}
                   </h3>
-                  <ShareButton 
+                  <ShareButton
                     url={(() => {
                       // Generate appropriate URL based on marker type
                       if (selectedMarker.type === 'cell') {
+                        if (isNrCellTowerLabel(selectedMarker.bssid)) {
+                          const info = parseNrCellTowerInfo(selectedMarker.bssid);
+                          if (info) {
+                            return generateShareUrl({
+                              radio: 'nr',
+                              mcc: info.mcc,
+                              mnc: info.mnc,
+                              tac: info.tac,
+                              nci: info.nci,
+                              latitude: selectedMarker.location.latitude,
+                              longitude: selectedMarker.location.longitude,
+                              tab: 'celltower',
+                            });
+                          }
+                        }
                         const towerInfo = parseCellTowerInfo(selectedMarker.bssid);
                         if (towerInfo) {
                           return generateShareUrl({
@@ -686,7 +903,7 @@ function HomeContent() {
                         }
                       }
                       // Default to BSSID-based URL
-                      return generateShareUrl({ 
+                      return generateShareUrl({
                         bssid: selectedMarker.bssid,
                         latitude: selectedMarker.location.latitude,
                         longitude: selectedMarker.location.longitude,
@@ -698,8 +915,55 @@ function HomeContent() {
                   />
                 </div>
                 <div className="rounded-lg p-4 space-y-2 transition-all glass-primary">
-                  {selectedMarker.type === 'cell' ? (
-                    // Cell Tower formatting
+                  {selectedMarker.type === 'cell' && isNrCellTowerLabel(selectedMarker.bssid) ? (
+                    // NR Cell Tower formatting
+                    (() => {
+                      const info = parseNrCellTowerInfo(selectedMarker.bssid);
+                      if (!info) return null;
+                      return (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>Carrier</span>
+                            <span className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                              {info.carrier}
+                              <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>5G NR</span>
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>MCC / MNC</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>{info.mcc} / {info.mnc}</span>
+                              <CopyButton text={`${info.mcc}/${info.mnc}`} label="MCC/MNC" analyticsSource="selected_marker" />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>TAC</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>{info.tac}</span>
+                              <CopyButton text={info.tac.toString()} label="TAC" analyticsSource="selected_marker" />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>NCI</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>{info.nci}</span>
+                              <CopyButton text={info.nci} label="NCI" analyticsSource="selected_marker" />
+                            </div>
+                          </div>
+                          {info.nrArfcn !== undefined && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }} title="NR Absolute Radio Frequency Channel Number">NR-ARFCN</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>{info.nrArfcn}</span>
+                                <CopyButton text={info.nrArfcn.toString()} label="NR-ARFCN" analyticsSource="selected_marker" />
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()
+                  ) : selectedMarker.type === 'cell' ? (
+                    // LTE Cell Tower formatting
                     (() => {
                       const towerInfo = parseCellTowerInfo(selectedMarker.bssid);
                       if (!towerInfo) return null;
@@ -943,19 +1207,36 @@ function HomeContent() {
                             longitude: marker.position[0],
                             latitude: marker.position[1]
                           });
-                          // Set tower params for auto-populate
+                          // Set tower params for auto-populate, branching on NR vs LTE label.
                           if (marker.type === 'cell') {
-                            const towerInfo = parseCellTowerInfo(marker.bssid);
-                            if (towerInfo) {
-                              setSelectedTowerParams({
-                                mcc: towerInfo.mcc.toString(),
-                                mnc: towerInfo.mnc.toString(),
-                                tac: towerInfo.tacId.toString(),
-                                cellId: towerInfo.cellId.toString()
-                              });
+                            if (isNrCellTowerLabel(marker.bssid)) {
+                              const info = parseNrCellTowerInfo(marker.bssid);
+                              if (info) {
+                                setSelectedNrTowerParams({
+                                  mcc: info.mcc.toString(),
+                                  mnc: info.mnc.toString(),
+                                  tac: info.tac.toString(),
+                                  nci: info.nci,
+                                });
+                                setCellTowerRadio('nr');
+                              }
+                              setSelectedTowerParams(null);
+                            } else {
+                              const towerInfo = parseCellTowerInfo(marker.bssid);
+                              if (towerInfo) {
+                                setSelectedTowerParams({
+                                  mcc: towerInfo.mcc.toString(),
+                                  mnc: towerInfo.mnc.toString(),
+                                  tac: towerInfo.tacId.toString(),
+                                  cellId: towerInfo.cellId.toString()
+                                });
+                                setCellTowerRadio('lte');
+                              }
+                              setSelectedNrTowerParams(null);
                             }
                           } else {
                             setSelectedTowerParams(null);
+                            setSelectedNrTowerParams(null);
                           }
                         }
                       }}
@@ -965,15 +1246,39 @@ function HomeContent() {
                           <p className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
                             {result.bssid.split(' - ')[0]}
                             {result.source === 'china' && (
-                              <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{ 
-                                backgroundColor: '#EE1C25', 
-                                color: 'white' 
+                              <span className="text-xs font-normal px-1.5 py-0.5 rounded" style={{
+                                backgroundColor: '#EE1C25',
+                                color: 'white'
                               }}>
                                 CN
                               </span>
                             )}
+                            {isNrCellTowerLabel(result.bssid) && (
+                              <span className="text-[10px] font-normal px-1.5 py-0.5 rounded" style={{
+                                backgroundColor: 'var(--bg-tertiary)',
+                                color: 'var(--text-secondary)'
+                              }}>
+                                5G NR
+                              </span>
+                            )}
                           </p>
                           {(() => {
+                            if (isNrCellTowerLabel(result.bssid)) {
+                              const info = parseNrCellTowerInfo(result.bssid);
+                              if (!info) return null;
+                              return (
+                                <>
+                                  <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                                    MCC:{info.mcc} MNC:{info.mnc} TAC:{info.tac} NCI:{info.nci}
+                                  </p>
+                                  {info.nrArfcn !== undefined && (
+                                    <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                                      NR-ARFCN:{info.nrArfcn}
+                                    </p>
+                                  )}
+                                </>
+                              );
+                            }
                             const towerInfo = parseCellTowerInfo(result.bssid);
                             if (!towerInfo) return null;
                             return (
@@ -1003,8 +1308,23 @@ function HomeContent() {
                           className="opacity-0 group-hover:opacity-100 transition-opacity" 
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <ShareButton 
+                          <ShareButton
                             url={(() => {
+                              if (isNrCellTowerLabel(result.bssid)) {
+                                const info = parseNrCellTowerInfo(result.bssid);
+                                if (info) {
+                                  return generateShareUrl({
+                                    radio: 'nr',
+                                    mcc: info.mcc,
+                                    mnc: info.mnc,
+                                    tac: info.tac,
+                                    nci: info.nci,
+                                    latitude: result.location.latitude,
+                                    longitude: result.location.longitude,
+                                    tab: 'celltower',
+                                  });
+                                }
+                              }
                               const towerInfo = parseCellTowerInfo(result.bssid);
                               if (towerInfo) {
                                 return generateShareUrl({
@@ -1018,7 +1338,7 @@ function HomeContent() {
                                 });
                               }
                               // Fallback (shouldn't happen for cell tower history)
-                              return generateShareUrl({ 
+                              return generateShareUrl({
                                 bssid: result.bssid,
                                 latitude: result.location.latitude,
                                 longitude: result.location.longitude
@@ -1147,7 +1467,11 @@ function HomeContent() {
                 isLocationSearching={isLocationSearching}
                 clickedLocation={clickedLocation}
                 selectedTowerParams={selectedTowerParams}
+                selectedNrTowerParams={selectedNrTowerParams}
                 hasUrlLoadedTowerResults={hasUrlLoadedTowerResults}
+                cellTowerRadio={cellTowerRadio}
+                onCellTowerRadioChange={setCellTowerRadio}
+                onNrCellTowerSearchResults={handleNrCellTowerSearchResults}
               />
             </div>
           </div>
@@ -1168,19 +1492,36 @@ function HomeContent() {
               longitude: marker.position[0],
               latitude: marker.position[1]
             });
-            // Set tower params for auto-populate
+            // Set tower params for auto-populate, branching on NR vs LTE label.
             if (marker.type === 'cell') {
-              const towerInfo = parseCellTowerInfo(marker.bssid);
-              if (towerInfo) {
-                setSelectedTowerParams({
-                  mcc: towerInfo.mcc.toString(),
-                  mnc: towerInfo.mnc.toString(),
-                  tac: towerInfo.tacId.toString(),
-                  cellId: towerInfo.cellId.toString()
-                });
+              if (isNrCellTowerLabel(marker.bssid)) {
+                const info = parseNrCellTowerInfo(marker.bssid);
+                if (info) {
+                  setSelectedNrTowerParams({
+                    mcc: info.mcc.toString(),
+                    mnc: info.mnc.toString(),
+                    tac: info.tac.toString(),
+                    nci: info.nci,
+                  });
+                  setCellTowerRadio('nr');
+                }
+                setSelectedTowerParams(null);
+              } else {
+                const towerInfo = parseCellTowerInfo(marker.bssid);
+                if (towerInfo) {
+                  setSelectedTowerParams({
+                    mcc: towerInfo.mcc.toString(),
+                    mnc: towerInfo.mnc.toString(),
+                    tac: towerInfo.tacId.toString(),
+                    cellId: towerInfo.cellId.toString()
+                  });
+                  setCellTowerRadio('lte');
+                }
+                setSelectedNrTowerParams(null);
               }
             } else {
               setSelectedTowerParams(null);
+              setSelectedNrTowerParams(null);
             }
           }}
         >

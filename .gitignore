@@ -42,3 +42,6 @@ next-env.d.ts
 
 .idea
 CLAUDE.md
+
+# Research workspace (kept locally, not committed)
+/research/

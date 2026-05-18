@@ -5,10 +5,11 @@ import BSSIDSearch from '@/components/bssid-search';
 import MultiBSSIDSearch from '@/components/bssid-search-multi';
 import LocationSearch from '@/components/location-search';
 import CellTowerSearch from '@/components/cell-tower-search';
+import NrCellTowerSearch from '@/components/nr-cell-tower-search';
 import { ToggleLeft, ToggleRight, Search, MapPin, AlertCircle, Signal } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAnalytics } from '@/hooks/use-analytics';
-import type { BSSIDSearchResult, CellTowerSearchResult } from '@/types';
+import type { BSSIDSearchResult, CellTowerSearchResult, NrCellTowerSearchResult } from '@/types';
 
 interface SearchControlsProps {
   isMultiMode: boolean;
@@ -18,6 +19,7 @@ interface SearchControlsProps {
   onSearchResults: (results: BSSIDSearchResult[]) => void;
   onLocationSearchResults?: (results: BSSIDSearchResult[]) => void;
   onCellTowerSearchResults?: (results: CellTowerSearchResult[]) => void;
+  onNrCellTowerSearchResults?: (results: NrCellTowerSearchResult[], searchParams?: { mcc: number; mnc: number; tac: number; nci: string }) => void;
   compact?: boolean;
   isLoadingFromUrl?: boolean;
   urlBssid?: string | null;
@@ -28,7 +30,10 @@ interface SearchControlsProps {
   isLocationSearching?: boolean;
   clickedLocation?: { latitude: number; longitude: number } | null;
   selectedTowerParams?: { mcc: string; mnc: string; tac: string; cellId: string } | null;
+  selectedNrTowerParams?: { mcc: string; mnc: string; tac: string; nci: string } | null;
   hasUrlLoadedTowerResults?: boolean;
+  cellTowerRadio?: 'lte' | 'nr';
+  onCellTowerRadioChange?: (radio: 'lte' | 'nr') => void;
 }
 
 export default function SearchControls({
@@ -39,6 +44,7 @@ export default function SearchControls({
   onSearchResults,
   onLocationSearchResults,
   onCellTowerSearchResults,
+  onNrCellTowerSearchResults,
   compact = false,
   isLoadingFromUrl = false,
   urlBssid = null,
@@ -49,9 +55,65 @@ export default function SearchControls({
   isLocationSearching = false,
   clickedLocation,
   selectedTowerParams,
-  hasUrlLoadedTowerResults = false
+  selectedNrTowerParams,
+  hasUrlLoadedTowerResults = false,
+  cellTowerRadio = 'lte',
+  onCellTowerRadioChange
 }: SearchControlsProps) {
   const { trackTabSwitch } = useAnalytics();
+
+  const radioToggle = (
+    <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+      <button
+        onClick={() => onCellTowerRadioChange?.('lte')}
+        className={`flex-1 px-3 py-1 rounded-md text-xs font-medium transition-all ${cellTowerRadio === 'lte' ? 'shadow-sm' : ''}`}
+        style={{
+          color: cellTowerRadio === 'lte' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+          backgroundColor: cellTowerRadio === 'lte' ? 'var(--bg-primary)' : 'transparent',
+        }}
+      >LTE</button>
+      <button
+        onClick={() => onCellTowerRadioChange?.('nr')}
+        className={`flex-1 px-3 py-1 rounded-md text-xs font-medium transition-all ${cellTowerRadio === 'nr' ? 'shadow-sm' : ''}`}
+        style={{
+          color: cellTowerRadio === 'nr' ? 'var(--text-primary)' : 'var(--text-tertiary)',
+          backgroundColor: cellTowerRadio === 'nr' ? 'var(--bg-primary)' : 'transparent',
+        }}
+      >5G NR</button>
+    </div>
+  );
+
+  const lteForm = (
+    <CellTowerSearch
+      onSearchResults={onCellTowerSearchResults || ((results) => {
+        const bssidResults = results.map(r => ({
+          bssid: `Cell-${r.tower.cellId}`,
+          location: r.location,
+          accuracy: r.accuracy,
+          source: r.source
+        } as BSSIDSearchResult));
+        onSearchResults(bssidResults);
+      })}
+      compact={compact}
+      initialMcc={selectedTowerParams?.mcc || ''}
+      initialMnc={selectedTowerParams?.mnc || ''}
+      initialTac={selectedTowerParams?.tac || ''}
+      initialCellId={selectedTowerParams?.cellId || ''}
+      isActive={activeTab === 'celltower'}
+      shouldStartCollapsed={hasUrlLoadedTowerResults}
+    />
+  );
+
+  const nrForm = (
+    <NrCellTowerSearch
+      onSearchResults={onNrCellTowerSearchResults || (() => { /* no-op */ })}
+      compact={compact}
+      initialMcc={selectedNrTowerParams?.mcc || ''}
+      initialMnc={selectedNrTowerParams?.mnc || ''}
+      initialTac={selectedNrTowerParams?.tac || ''}
+      initialNci={selectedNrTowerParams?.nci || ''}
+    />
+  );
   
   // For mobile compact mode, we'll pass the toggle button to the search component
   const toggleButton = (
@@ -160,25 +222,8 @@ export default function SearchControls({
         {/* Content based on active tab */}
         {activeTab === 'celltower' ? (
           <div className="space-y-2 animate-fadeIn">
-            <CellTowerSearch 
-              onSearchResults={onCellTowerSearchResults || ((results) => {
-                // Convert cell tower results to BSSID results format for compatibility
-                const bssidResults = results.map(r => ({
-                  bssid: `Cell-${r.tower.cellId}`,
-                  location: r.location,
-                  accuracy: r.accuracy,
-                  source: r.source
-                } as BSSIDSearchResult));
-                onSearchResults(bssidResults);
-              })}
-              compact={true}
-              initialMcc={selectedTowerParams?.mcc || ''}
-              initialMnc={selectedTowerParams?.mnc || ''}
-              initialTac={selectedTowerParams?.tac || ''}
-              initialCellId={selectedTowerParams?.cellId || ''}
-              isActive={activeTab === 'celltower'}
-              shouldStartCollapsed={hasUrlLoadedTowerResults}
-            />
+            {radioToggle}
+            {cellTowerRadio === 'nr' ? nrForm : lteForm}
           </div>
         ) : activeTab === 'location' ? (
           <div className="space-y-2 animate-fadeIn">
@@ -239,8 +284,8 @@ export default function SearchControls({
   return (
     <div>
       <h2 className="text-lg font-semibold mb-4">
-        {activeTab === 'celltower' ? 'Search LTE Towers' : 
-         activeTab === 'location' ? 'Search by Location' : 
+        {activeTab === 'celltower' ? 'Search Cell Towers' :
+         activeTab === 'location' ? 'Search by Location' :
          'Search Access Points'}
       </h2>
       
@@ -336,26 +381,12 @@ export default function SearchControls({
         <TabsContent value="celltower">
           <div className="space-y-4">
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Search for LTE cell towers by network parameters
+              {cellTowerRadio === 'nr'
+                ? 'Search for 5G NR cells by MCC, MNC, TAC, and NCI'
+                : 'Search for LTE cell towers by network parameters'}
             </p>
-            <CellTowerSearch 
-              onSearchResults={onCellTowerSearchResults || ((results) => {
-                // Convert cell tower results to BSSID results format for compatibility
-                const bssidResults = results.map(r => ({
-                  bssid: `Cell-${r.tower.cellId}`,
-                  location: r.location,
-                  accuracy: r.accuracy,
-                  source: r.source
-                } as BSSIDSearchResult));
-                onSearchResults(bssidResults);
-              })}
-              initialMcc={selectedTowerParams?.mcc || ''}
-              initialMnc={selectedTowerParams?.mnc || ''}
-              initialTac={selectedTowerParams?.tac || ''}
-              initialCellId={selectedTowerParams?.cellId || ''}
-              isActive={activeTab === 'celltower'}
-              shouldStartCollapsed={hasUrlLoadedTowerResults}
-            />
+            {radioToggle}
+            {cellTowerRadio === 'nr' ? nrForm : lteForm}
           </div>
         </TabsContent>
       </Tabs>

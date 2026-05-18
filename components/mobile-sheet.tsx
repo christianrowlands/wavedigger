@@ -5,7 +5,7 @@ import ShareButton from '@/components/share-button';
 import CopyButton from '@/components/copy-button';
 import { useShareUrl } from '@/hooks/use-share-url';
 import { formatBSSIDForDisplay } from '@/lib/bssid-utils';
-import { parseCellTowerInfo } from '@/lib/cell-tower-utils';
+import { parseCellTowerInfo, isNrCellTowerLabel, parseNrCellTowerInfo } from '@/lib/cell-tower-utils';
 import type { MapMarker, BSSIDSearchResult } from '@/types';
 
 interface MobileSheetProps {
@@ -294,20 +294,110 @@ export default function MobileSheet({
                     </span>
                   )}
                 </h4>
-                <ShareButton 
-                  url={generateShareUrl({ 
-                    bssid: selectedMarker.bssid,
-                    latitude: selectedMarker.location.latitude,
-                    longitude: selectedMarker.location.longitude
-                  })}
+                <ShareButton
+                  url={(() => {
+                    if (selectedMarker.type === 'cell') {
+                      if (isNrCellTowerLabel(selectedMarker.bssid)) {
+                        const info = parseNrCellTowerInfo(selectedMarker.bssid);
+                        if (info) {
+                          return generateShareUrl({
+                            radio: 'nr',
+                            mcc: info.mcc,
+                            mnc: info.mnc,
+                            tac: info.tac,
+                            nci: info.nci,
+                            latitude: selectedMarker.location.latitude,
+                            longitude: selectedMarker.location.longitude,
+                            tab: 'celltower',
+                          });
+                        }
+                      }
+                      const towerInfo = parseCellTowerInfo(selectedMarker.bssid);
+                      if (towerInfo) {
+                        return generateShareUrl({
+                          mcc: towerInfo.mcc,
+                          mnc: towerInfo.mnc,
+                          tac: towerInfo.tacId,
+                          cellId: towerInfo.cellId,
+                          latitude: selectedMarker.location.latitude,
+                          longitude: selectedMarker.location.longitude,
+                          tab: 'celltower',
+                        });
+                      }
+                    }
+                    return generateShareUrl({
+                      bssid: selectedMarker.bssid,
+                      latitude: selectedMarker.location.latitude,
+                      longitude: selectedMarker.location.longitude,
+                    });
+                  })()}
                   variant="icon"
                   className="!p-1"
                   analyticsSource="selected_marker"
                 />
               </div>
               <div className="space-y-1 text-xs">
-                {selectedMarker.type === 'cell' ? (
-                  // Cell Tower formatting
+                {selectedMarker.type === 'cell' && isNrCellTowerLabel(selectedMarker.bssid) ? (
+                  // NR Cell Tower formatting
+                  (() => {
+                    const info = parseNrCellTowerInfo(selectedMarker.bssid);
+                    if (!info) return null;
+                    return (
+                      <>
+                        <div className="flex justify-between">
+                          <span style={{ color: 'var(--text-tertiary)' }}>Carrier</span>
+                          <span className="font-medium">{info.carrier} <span className="text-[10px] px-1 rounded" style={{ backgroundColor: 'var(--color-primary-100, var(--bg-tertiary))', color: 'var(--color-primary-600, var(--text-primary))' }}>5G NR</span></span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span style={{ color: 'var(--text-tertiary)' }}>MCC/MNC</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">{info.mcc}/{info.mnc}</span>
+                            <CopyButton
+                              text={`${info.mcc}/${info.mnc}`}
+                              label="MCC/MNC"
+                              size="sm"
+                              analyticsType="location"
+                              analyticsSource="mobile_sheet"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-between">
+                          <span style={{ color: 'var(--text-tertiary)' }}>TAC</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">{info.tac}</span>
+                            <CopyButton
+                              text={info.tac.toString()}
+                              label="TAC"
+                              size="sm"
+                              analyticsType="location"
+                              analyticsSource="mobile_sheet"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-between">
+                          <span style={{ color: 'var(--text-tertiary)' }}>NCI</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono">{info.nci}</span>
+                            <CopyButton
+                              text={info.nci}
+                              label="NCI"
+                              size="sm"
+                              analyticsType="location"
+                              analyticsSource="mobile_sheet"
+                            />
+                          </div>
+                        </div>
+                        {info.nrArfcn !== undefined && (
+                          <div className="flex justify-between">
+                            <span style={{ color: 'var(--text-tertiary)' }} title="NR Absolute Radio Frequency Channel Number">NR-ARFCN</span>
+                            <span className="font-mono">{info.nrArfcn}</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()
+                ) : selectedMarker.type === 'cell' ? (
+                  // LTE Cell Tower formatting
                   (() => {
                     const towerInfo = parseCellTowerInfo(selectedMarker.bssid);
                     if (!towerInfo) return null;
@@ -502,8 +592,11 @@ export default function MobileSheet({
             <div className="mt-4 space-y-2">
               <h4 className="text-sm font-semibold mb-2">Tower Search History</h4>
               {cellTowerSearchHistory.map((result, index) => {
-                const towerInfo = parseCellTowerInfo(result.bssid);
-                if (!towerInfo) return null;
+                const isNr = isNrCellTowerLabel(result.bssid);
+                const nrInfo = isNr ? parseNrCellTowerInfo(result.bssid) : null;
+                const lteInfo = !isNr ? parseCellTowerInfo(result.bssid) : null;
+                if (!nrInfo && !lteInfo) return null;
+                const carrier = nrInfo ? nrInfo.carrier : lteInfo!.carrier;
                 return (
                   <div
                     key={`${result.bssid}-${index}`}
@@ -522,26 +615,50 @@ export default function MobileSheet({
                     }}
                   >
                     <p className="font-medium flex items-center gap-2">
-                      {towerInfo.carrier}
+                      {carrier}
                       {result.source === 'china' && (
-                        <span className="text-xs font-normal px-1 py-0.5 rounded" style={{ 
-                          backgroundColor: '#EE1C25', 
+                        <span className="text-xs font-normal px-1 py-0.5 rounded" style={{
+                          backgroundColor: '#EE1C25',
                           color: 'white',
                           fontSize: '0.65rem'
                         }}>
                           CN
                         </span>
                       )}
+                      {isNr && (
+                        <span className="text-[10px] font-normal px-1 py-0.5 rounded" style={{
+                          backgroundColor: 'var(--bg-tertiary)',
+                          color: 'var(--text-secondary)',
+                          fontSize: '0.6rem'
+                        }}>
+                          5G NR
+                        </span>
+                      )}
                     </p>
-                    <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
-                      MCC:{towerInfo.mcc} MNC:{towerInfo.mnc} TAC:{towerInfo.tacId} Cell:{towerInfo.cellId}
-                    </p>
-                    {(towerInfo.uarfcn !== undefined || towerInfo.pid !== undefined) && (
-                      <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
-                        {towerInfo.uarfcn !== undefined && `EARFCN:${towerInfo.uarfcn}`}
-                        {towerInfo.uarfcn !== undefined && towerInfo.pid !== undefined && ' • '}
-                        {towerInfo.pid !== undefined && `PCI:${towerInfo.pid}`}
-                      </p>
+                    {nrInfo ? (
+                      <>
+                        <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                          MCC:{nrInfo.mcc} MNC:{nrInfo.mnc} TAC:{nrInfo.tac} NCI:{nrInfo.nci}
+                        </p>
+                        {nrInfo.nrArfcn !== undefined && (
+                          <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                            NR-ARFCN:{nrInfo.nrArfcn}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                          MCC:{lteInfo!.mcc} MNC:{lteInfo!.mnc} TAC:{lteInfo!.tacId} Cell:{lteInfo!.cellId}
+                        </p>
+                        {(lteInfo!.uarfcn !== undefined || lteInfo!.pid !== undefined) && (
+                          <p className="text-xs mt-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                            {lteInfo!.uarfcn !== undefined && `EARFCN:${lteInfo!.uarfcn}`}
+                            {lteInfo!.uarfcn !== undefined && lteInfo!.pid !== undefined && ' • '}
+                            {lteInfo!.pid !== undefined && `PCI:${lteInfo!.pid}`}
+                          </p>
+                        )}
+                      </>
                     )}
                     <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
                       {result.location.latitude.toFixed(4)}, {result.location.longitude.toFixed(4)}

@@ -18,7 +18,12 @@ message AppleWLoc {
   // optional string unknown_value2 = 6;
   // optional int64 unknown_value7 = 7;
   repeated CellTower cell_tower_response = 22; // LTE cell towers?
+  // 5G NR direct lookup response cluster, populated when nr_cell_request@29
+  // is sent. See research/5g-nr/findings/03-prober.md.
+  repeated NrCellResponse nr_cell_response = 24;
   optional CellTower cell_tower_request = 25;
+  // 5G NR direct lookup request. Apple returns nr_cell_response@24 entries.
+  optional NrCellRequest nr_cell_request = 29;
   // optional int32 unknown_value31 = 31;
   // optional int32 unknown_value32 = 32;
   optional DeviceType device_type = 33;
@@ -32,6 +37,22 @@ message CellTower {
   optional Location location = 5;
   optional uint32 uarfcn = 6;
   optional uint32 pid = 7;
+}
+
+message NrCellRequest {
+  uint32 mcc = 1;
+  uint32 mnc = 2;
+  int64 nci = 3;
+  uint32 tac = 4;
+}
+
+message NrCellResponse {
+  uint32 mcc = 1;
+  uint32 mnc = 2;
+  int64 nci = 3;
+  uint32 tac = 4;
+  optional Location location = 5;
+  optional uint32 nr_arfcn = 6;
 }
 
 message DeviceType {
@@ -109,6 +130,8 @@ export const WifiDevice = root.lookupType('WifiDevice');
 export const Location = root.lookupType('Location');
 export const DeviceType = root.lookupType('DeviceType');
 export const CellTower = root.lookupType('CellTower');
+export const NrCellRequest = root.lookupType('NrCellRequest');
+export const NrCellResponse = root.lookupType('NrCellResponse');
 export const WifiTile = root.lookupType('WifiTile');
 export const Region = root.lookupType('Region');
 export const Device = root.lookupType('Device');
@@ -143,6 +166,27 @@ export interface ICellTower {
   pid?: number;
 }
 
+export interface INrCellRequest {
+  mcc: number;
+  mnc: number;
+  // BigInt-compatible value for protobufjs int64 encoding. Pass a string of
+  // the decimal NCI; protobufjs accepts string|number|Long for int64 inputs.
+  nci: string | number;
+  tac: number;
+}
+
+export interface INrCellResponse {
+  mcc?: number;
+  mnc?: number;
+  // After parseResponse(), nci is a plain number (longs: Number). Use
+  // parseNrCellResponses() to convert to a string-typed shape preserving
+  // int64 precision for downstream JSON paths.
+  nci?: number;
+  tac?: number;
+  location?: ILocation;
+  nrArfcn?: number;
+}
+
 export interface IAppleWLoc {
   wifi_devices?: IWifiDevice[];
   wifiDevices?: IWifiDevice[];  // Support both for compatibility
@@ -156,6 +200,10 @@ export interface IAppleWLoc {
   cellTowerResponse?: ICellTower[];
   cell_tower_request?: ICellTower;
   cellTowerRequest?: ICellTower;
+  nr_cell_request?: INrCellRequest;
+  nrCellRequest?: INrCellRequest;
+  nr_cell_response?: INrCellResponse[];
+  nrCellResponse?: INrCellResponse[];
   device_type?: IDeviceType;
   deviceType?: IDeviceType;
 }
@@ -245,7 +293,33 @@ export function serializeRequest(wlocData: IAppleWLoc): Uint8Array<ArrayBuffer> 
       tacId: cellTowerRequest.tacId
     };
   }
-  
+
+  // Add NR cell request if provided (5G NR direct lookup via field 29)
+  const nrCellRequest = wlocData.nrCellRequest || wlocData.nr_cell_request;
+  if (nrCellRequest) {
+    // protobufjs.verify() for int64 requires a Long instance (or integer Number);
+    // a string passes encode() but fails verify(). Build a Long from the input
+    // string|number so both verify() and encode() accept it.
+    const rawNci = nrCellRequest.nci;
+    const LongCtor = (protobuf as unknown as { util: { Long: typeof import('long').default | null } }).util.Long;
+    let nciValue: unknown;
+    if (LongCtor) {
+      nciValue = typeof rawNci === 'string'
+        ? LongCtor.fromString(rawNci, false, 10)
+        : LongCtor.fromNumber(rawNci, false);
+    } else {
+      // Fallback: protobufjs not configured with Long; coerce to number. Safe
+      // for the 36-bit NCI range (< 2^53), but loses precision above.
+      nciValue = typeof rawNci === 'string' ? Number(rawNci) : rawNci;
+    }
+    protoData.nrCellRequest = {
+      mcc: nrCellRequest.mcc,
+      mnc: nrCellRequest.mnc,
+      nci: nciValue,
+      tac: nrCellRequest.tac
+    };
+  }
+
   // Add device type if provided
   const deviceType = wlocData.deviceType || wlocData.device_type;
   if (deviceType) {
@@ -319,6 +393,47 @@ export function parseResponse(data: Buffer): IAppleWLoc {
   } catch (error) {
     throw new Error(`Failed to decode protobuf: ${error}`);
   }
+}
+
+// Public NR-side shape: nci normalized to string, location pre-parsed to
+// lat/lng floats. Returned by parseNrCellResponses(). The route handler is
+// the single consumer, and downstream JSON paths see nci as a string.
+export interface ParsedNrCell {
+  mcc: number;
+  mnc: number;
+  nci: string;
+  tac: number;
+  location: { lat: number; lng: number } | null;
+  horizontalAccuracy?: number;
+  nrArfcn?: number;
+}
+
+// Convert the int64 NCI field in nrCellResponse[] to a decimal string,
+// preserving precision even though current NCIs fit in JS Number range. This
+// also surfaces lat/lng floats and filters out the -180/-180 echo Apple sends
+// for unknown NCIs (caller decides whether to keep the echo entry).
+export function parseNrCellResponses(parsed: IAppleWLoc): ParsedNrCell[] {
+  const responses = parsed.nrCellResponse || parsed.nr_cell_response || [];
+  const out: ParsedNrCell[] = [];
+  for (const r of responses) {
+    const nciRaw = r.nci;
+    // protobufjs with longs: Number returns plain number for int64 in JS safe
+    // range. For values > 2^53 it would yield a precision-lossy number; the
+    // current 36-bit NCI space (max 6.87e10) is well within safe range, but
+    // stringify defensively.
+    const nci = typeof nciRaw === 'number' ? nciRaw.toString() : String(nciRaw ?? '0');
+    const loc = parseLocation(r.location);
+    out.push({
+      mcc: r.mcc ?? 0,
+      mnc: r.mnc ?? 0,
+      nci,
+      tac: r.tac ?? 0,
+      location: loc ? { lat: loc.lat, lng: loc.lng } : null,
+      horizontalAccuracy: r.location?.horizontalAccuracy,
+      nrArfcn: r.nrArfcn,
+    });
+  }
+  return out;
 }
 
 // Parse WifiTile response

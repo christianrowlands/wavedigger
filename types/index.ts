@@ -50,3 +50,23 @@ export interface CellTowerSearchResult {
   accuracy?: number;
   source?: 'global' | 'china';
 }
+
+export interface NrCellTowerInfo {
+  mcc: number;
+  mnc: number;
+  // 5G NR cell identity is up to 36 bits; serialized as a decimal string
+  // throughout the app to preserve int64 semantics in JSON / URL / storage.
+  nci: string;
+  tac: number;
+  nrArfcn?: number;
+}
+
+export interface NrCellTowerSearchResult {
+  tower: NrCellTowerInfo;
+  location: Location;
+  accuracy?: number;
+  source?: 'global' | 'china';
+  // Marks the row whose NCI matches the user's query. Apple's NR direct path
+  // returns the requested cell plus ~100 surrounding NR cells in the cluster.
+  isPrimary?: boolean;
+}
