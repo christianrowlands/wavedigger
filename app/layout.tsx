@@ -20,12 +20,15 @@ export const metadata: Metadata = {
     template: '%s | WaveDigger - WiFi & Cell Tower Locator',
     default: 'WaveDigger - WiFi & Cell Tower Locator',
   },
-  description: 'Find the physical location of WiFi access points and LTE cell towers. Locate networks using BSSID (MAC address) or cell tower IDs (MCC, MNC, TAC, Cell ID). View EARFCN and PCI values for LTE towers. Free network mapping tool using Apple location services.',
+  description: 'Find the physical location of WiFi access points and LTE/5G NR cell towers. Locate networks using BSSID (MAC address) or cell tower IDs (MCC, MNC, TAC, Cell ID or NCI). View EARFCN, PCI, and NR-ARFCN for tower analysis. Free network mapping tool using Apple location services.',
   keywords: [
     'BSSID lookup',
     'WiFi location finder',
     'cell tower locator',
     'LTE tower location',
+    '5G NR tower location',
+    'NCI lookup',
+    'gNB locator',
     'MAC address locator',
     'MCC MNC lookup',
     'TAC Cell ID finder',
@@ -45,7 +48,10 @@ export const metadata: Metadata = {
     'PCI cell tower',
     'LTE frequency',
     'Physical Cell ID',
-    'E-UTRA frequency channel'
+    'E-UTRA frequency channel',
+    'NR-ARFCN',
+    '5G cell identity',
+    'gNodeB locator'
   ],
   authors: [{ name: 'WaveDigger Team' }],
   creator: 'WaveDigger',
@@ -61,7 +67,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'WaveDigger - WiFi & Cell Tower Locator',
-    description: 'Locate WiFi access points by BSSID and LTE cell towers by network IDs. Map wireless and cellular networks using Apple location services.',
+    description: 'Locate WiFi access points by BSSID and LTE or 5G NR cell towers by network IDs. Map wireless and cellular networks using Apple location services.',
     url: 'https://wavedigger.networksurvey.app',
     siteName: 'WaveDigger',
     images: [
@@ -78,7 +84,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'WaveDigger - WiFi & Cell Tower Locator',
-    description: 'Find WiFi access points and LTE cell tower locations. Free network mapping tool.',
+    description: 'Find WiFi access points and LTE/5G NR cell tower locations. Free network mapping tool.',
     images: ['/twitter-image.png'],
   },
   robots: {
@@ -133,7 +139,7 @@ export default function RootLayout({
         "@type": "WebApplication",
         "@id": "https://wavedigger.networksurvey.app/#webapp",
         "name": "WaveDigger",
-        "description": "WiFi and cell tower location finder. Discover the physical location of wireless access points using BSSID (MAC addresses) and LTE cell towers using network IDs (MCC, MNC, TAC, Cell ID). View EARFCN and PCI values for advanced LTE tower analysis.",
+        "description": "WiFi and cell tower location finder. Discover the physical location of wireless access points using BSSID (MAC addresses) and LTE or 5G NR cell towers using network IDs (MCC, MNC, TAC, Cell ID or NCI). View EARFCN, PCI, and NR-ARFCN values for tower analysis.",
         "url": "https://wavedigger.networksurvey.app",
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "Web",
@@ -147,6 +153,7 @@ export default function RootLayout({
           "BSSID to location lookup",
           "Multiple BSSID search",
           "LTE cell tower location finder",
+          "5G NR cell tower location finder",
           "Location-based WiFi discovery",
           "Include surrounding access points",
           "Interactive map visualization",

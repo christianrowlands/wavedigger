@@ -1,6 +1,6 @@
 # WaveDigger
 
-Dig into wireless signals to discover their physical locations. WaveDigger helps you find Wi-Fi access points by their BSSID (MAC address) and LTE cell towers by their network parameters. Built with Next.js, TypeScript, and deck.gl for interactive map visualization.
+Dig into wireless signals to discover their physical locations. WaveDigger helps you find Wi-Fi access points by their BSSID (MAC address) and cell towers (LTE and 5G NR) by their network parameters. Built with Next.js, TypeScript, and deck.gl for interactive map visualization.
 
 A hosted version can be found at [https://wavedigger.networksurvey.app](https://wavedigger.networksurvey.app).
 
@@ -11,6 +11,7 @@ A hosted version can be found at [https://wavedigger.networksurvey.app](https://
 - **BSSID Search**: Enter a BSSID to find its approximate location
 - **Input Validation**: Automatic formatting and validation of BSSID input
   - Supports formats: `AA:BB:CC:DD:EE:FF`, `AA-BB-CC-DD-EE-FF`, `AABBCCDDEEFF`
+- **Cell Tower Search**: Look up LTE towers (MCC, MNC, TAC, Cell ID) or 5G NR towers (MCC, MNC, TAC, NCI). NR searches return the target cell plus surrounding NR cells in the same cluster.
 - **Interactive Map**: Visualize results on a deck.gl-powered map
 - **Search History**: Track recent searches for quick access
 - **Responsive Design**: Works on desktop and mobile devices
@@ -86,8 +87,8 @@ Note: Not all BSSIDs are in Apple's database. Newly deployed or private access p
 
 ## Features Roadmap
 
-- **Cell Tower Tracking**: Find cell tower locations
 - **Export Results**: Download search results as JSON/CSV
+- **TAC-cluster view**: Browse every tower in a TAC without needing a specific Cell ID or NCI
 
 ## License
 

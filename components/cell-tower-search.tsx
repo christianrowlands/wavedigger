@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { HelpCircle, AlertCircle, Signal, AlertTriangle, Edit2, ChevronUp } from 'lucide-react';
+import { HelpCircle, AlertCircle, Signal, Edit2, ChevronUp } from 'lucide-react';
 import type { CellTowerSearchResult, SearchError } from '@/types';
 import { validateCellTowerParams, COMMON_CARRIERS } from '@/lib/cell-tower-utils';
 import { useAnalytics } from '@/hooks/use-analytics';
@@ -52,12 +52,6 @@ export default function CellTowerSearch({
   const [isSearching, setIsSearching] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [showLteWarning, setShowLteWarning] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('hideLteWarning') !== 'true';
-    }
-    return true;
-  });
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [lastSearchParams, setLastSearchParams] = useState<{ mcc: string; mnc: string; tac: string; cellId: string; carrier?: string } | null>(null);
   const { logEvent } = useAnalytics();
@@ -227,13 +221,6 @@ export default function CellTowerSearch({
     });
   };
 
-  const dismissLteWarning = () => {
-    setShowLteWarning(false);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('hideLteWarning', 'true');
-    }
-  };
-
   // Collapsed view - show compact summary
   if (isCollapsed && lastSearchParams && compact) {
     return (
@@ -274,30 +261,6 @@ export default function CellTowerSearch({
 
   return (
     <div className="space-y-2">
-      {/* LTE-only info */}
-      {showLteWarning && (
-        <div className="flex items-start gap-2 p-2 rounded-lg" style={{ 
-          backgroundColor: 'var(--bg-secondary)',
-          border: '1px solid var(--border-secondary)'
-        }}>
-          <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary-400)' }} />
-          <div className="flex-1">
-            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              Only LTE towers are supported
-            </p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-              5G NR, UMTS, and GSM towers are not available through this search
-            </p>
-          </div>
-          <button
-            onClick={dismissLteWarning}
-            className="text-xs hover:opacity-70"
-            style={{ color: 'var(--text-tertiary)' }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
       {/* Input Grid */}
       <div className={`grid ${compact ? 'grid-cols-2 gap-2' : 'grid-cols-2 gap-3'}`}>
         <div>
@@ -537,14 +500,13 @@ export default function CellTowerSearch({
               <DialogTitle className="text-xl mb-4">Cell Tower Search Help</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {/* LTE Support Section */}
+              {/* Radio Support Section */}
               <section>
-                <h3 className="font-semibold mb-2 text-sm flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
-                  <AlertTriangle className="h-4 w-4" style={{ color: 'var(--color-primary-400)' }} />
-                  LTE Support Only
+                <h3 className="font-semibold mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>
+                  Supported Radios
                 </h3>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  This search only supports LTE towers. 5G NR, UMTS, and GSM towers are not available through Apple&apos;s location services.
+                  This tab searches LTE towers. For 5G NR, use the LTE/5G NR toggle above. UMTS and GSM are not available through Apple&apos;s location services.
                 </p>
               </section>
 

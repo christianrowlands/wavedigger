@@ -40,6 +40,7 @@ export default function AboutDialog() {
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li><strong>Wi-Fi Access Points:</strong> Look up any router or access point using its BSSID (MAC address)</li>
               <li><strong>LTE Cell Towers:</strong> Find cell tower locations using network identifiers (MCC, MNC, TAC, Cell ID)</li>
+              <li><strong>5G NR Cell Towers:</strong> Find NR cell locations using MCC, MNC, TAC, and NCI. Returns the target cell plus surrounding NR cells in the cluster.</li>
             </ul>
           </section>
 
@@ -50,7 +51,7 @@ export default function AboutDialog() {
             <ul className="list-disc list-inside space-y-1">
               <li>Single or batch BSSID searches</li>
               <li>Include surrounding access points option (find entire buildings/areas)</li>
-              <li>LTE cell tower location lookup</li>
+              <li>LTE and 5G NR cell tower location lookup</li>
               <li>Location-based Access Point discovery</li>
               <li>Search history with China database indicators</li>
               <li>Shareable URLs for specific locations</li>
@@ -83,12 +84,21 @@ export default function AboutDialog() {
                 </ul>
               </div>
               <div>
-                <p className="font-medium">Cell Tower requires all 4 values:</p>
+                <p className="font-medium">LTE Cell Tower (all 4 required):</p>
                 <ul className="list-disc list-inside space-y-1 text-xs mt-1 ml-2">
                   <li>MCC: Mobile Country Code (e.g., 310 for USA)</li>
                   <li>MNC: Mobile Network Code (e.g., 410 for AT&T)</li>
-                  <li>TAC: Tracking Area Code</li>
-                  <li>Cell ID: Cell Tower Identifier</li>
+                  <li>TAC: Tracking Area Code (16-bit, 0-65535)</li>
+                  <li>Cell ID: LTE Cell Identifier</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-medium">5G NR Cell Tower (all 4 required):</p>
+                <ul className="list-disc list-inside space-y-1 text-xs mt-1 ml-2">
+                  <li>MCC: Mobile Country Code</li>
+                  <li>MNC: Mobile Network Code</li>
+                  <li>TAC: Tracking Area Code (24-bit, 0-16,777,215)</li>
+                  <li>NCI: NR Cell Identity (36-bit, 0-68,719,476,735)</li>
                 </ul>
               </div>
             </div>
@@ -101,8 +111,8 @@ export default function AboutDialog() {
             <ul className="list-disc list-inside space-y-1">
               <li>Not all networks are in the database</li>
               <li>New or recently moved devices may not be found</li>
-              <li>Only LTE towers supported (no 5G NR, UMTS, or GSM)</li>
-              <li>Location accuracy varies (typically 50-100m for Wi-Fi, 100-500m for cell towers)</li>
+              <li>LTE and 5G NR towers supported; UMTS and GSM are not</li>
+              <li>Location accuracy varies (typically 50-100m for Wi-Fi, 1-3km for cell towers)</li>
               <li>Location search limited to ~5km tile resolution</li>
             </ul>
           </section>
