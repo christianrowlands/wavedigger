@@ -111,7 +111,11 @@ function HomeContent() {
       params.set('nci', options.nci);
       params.set('radio', 'nr');
       params.delete('cellId');
-      params.delete('returnAll');
+      if (options.returnAll !== undefined) {
+        params.set('returnAll', options.returnAll.toString());
+      } else {
+        params.delete('returnAll');
+      }
       params.delete('bssid');
     } else if (options?.mcc !== undefined && options?.mnc !== undefined &&
         options?.tac !== undefined && options?.cellId !== undefined) {
@@ -401,6 +405,7 @@ function HomeContent() {
     mnc: number;
     tac: number;
     nci: string;
+    returnAll?: boolean;
   }) => {
     const newMarkers: MapMarker[] = results.map((result, index) => {
       const towerLabel = formatNrCellTowerInfo(
@@ -500,6 +505,7 @@ function HomeContent() {
         tac: searchParams.tac,
         nci: searchParams.nci,
         radio: 'nr',
+        returnAll: searchParams.returnAll,
       });
     }
   }, [updateUrl, isLoadingFromUrl]);
@@ -656,6 +662,7 @@ function HomeContent() {
               mnc: parseInt(mncParam, 10),
               tac: parseInt(tacParam, 10),
               nci: nciParam,
+              returnAll: returnAllParam === 'true',
             }),
           });
           const data = await response.json();
@@ -665,6 +672,7 @@ function HomeContent() {
               mnc: parseInt(mncParam, 10),
               tac: parseInt(tacParam, 10),
               nci: nciParam,
+              returnAll: returnAllParam === 'true',
             });
             setActiveTab('celltower');
             setHasUrlLoadedTowerResults(true);

@@ -19,7 +19,7 @@ interface SearchControlsProps {
   onSearchResults: (results: BSSIDSearchResult[]) => void;
   onLocationSearchResults?: (results: BSSIDSearchResult[]) => void;
   onCellTowerSearchResults?: (results: CellTowerSearchResult[]) => void;
-  onNrCellTowerSearchResults?: (results: NrCellTowerSearchResult[], searchParams?: { mcc: number; mnc: number; tac: number; nci: string }) => void;
+  onNrCellTowerSearchResults?: (results: NrCellTowerSearchResult[], searchParams?: { mcc: number; mnc: number; tac: number; nci: string; returnAll: boolean }) => void;
   compact?: boolean;
   isLoadingFromUrl?: boolean;
   urlBssid?: string | null;
@@ -382,7 +382,7 @@ export default function SearchControls({
           <div className="space-y-4">
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               {cellTowerRadio === 'nr'
-                ? 'Search for 5G NR cells by MCC, MNC, TAC, and NCI'
+                ? 'Search for 5G NR cells by network parameters'
                 : 'Search for LTE cell towers by network parameters'}
             </p>
             {radioToggle}

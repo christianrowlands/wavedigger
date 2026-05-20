@@ -7,6 +7,8 @@ import {
   validateNrCellTowerParams,
   COMMON_CARRIERS,
 } from '@/lib/cell-tower-utils';
+import { useAnalytics } from '@/hooks/use-analytics';
+import { AnalyticsEvents } from '@/lib/analytics';
 import { useToast } from '@/components/toast-provider';
 import {
   Dialog,
@@ -22,6 +24,7 @@ interface NrCellTowerSearchProps {
     mnc: number;
     tac: number;
     nci: string;
+    returnAll: boolean;
   }) => void;
   onError?: (error: SearchError) => void;
   compact?: boolean;
@@ -44,11 +47,13 @@ export default function NrCellTowerSearch({
   const [mnc, setMnc] = useState(initialMnc);
   const [tac, setTac] = useState(initialTac);
   const [nci, setNci] = useState(initialNci);
+  const [includeSurrounding, setIncludeSurrounding] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [lastSearchParams, setLastSearchParams] = useState<{ mcc: string; mnc: string; tac: string; nci: string; carrier?: string } | null>(null);
+  const { logEvent } = useAnalytics();
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -78,6 +83,7 @@ export default function NrCellTowerSearch({
           mnc: parseInt(mnc, 10),
           tac: parseInt(tac, 10),
           nci,
+          returnAll: includeSurrounding,
         }),
       });
       const data = await response.json();
@@ -112,9 +118,13 @@ export default function NrCellTowerSearch({
           mnc: parseInt(mnc, 10),
           tac: parseInt(tac, 10),
           nci,
+          returnAll: includeSurrounding,
         });
         const count = data.results.length;
-        showToast(`Found ${count} NR cell${count === 1 ? '' : 's'} in the cluster`, 'success');
+        const message = includeSurrounding
+          ? `Found ${count} NR cell${count === 1 ? '' : 's'} in the cluster`
+          : 'NR cell found';
+        showToast(message, 'success');
       } else {
         const msg = 'No NR cells found in the response';
         setSearchError(msg);
@@ -136,6 +146,13 @@ export default function NrCellTowerSearch({
   };
 
   const inputClass = `w-full px-3 py-2 rounded-lg transition-all text-sm ${compact ? 'py-1.5' : ''}`;
+
+  const handleNetworkSurveyClick = () => {
+    logEvent(AnalyticsEvents.EXTERNAL_LINK_CLICK, {
+      link_type: 'network_survey_app',
+      link_url: 'https://www.networksurvey.app/'
+    });
+  };
 
   if (isCollapsed && lastSearchParams && compact) {
     return (
@@ -174,19 +191,6 @@ export default function NrCellTowerSearch({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-start gap-2 p-2 rounded-lg" style={{
-        backgroundColor: 'var(--bg-secondary)',
-        border: '1px solid var(--border-secondary)',
-      }}>
-        <Signal className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--color-primary-400)' }} />
-        <div className="flex-1">
-          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>5G NR direct lookup</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Returns the target cell plus surrounding NR cells in the cluster. Per-cell accuracy is typically 1-2 km.
-          </p>
-        </div>
-      </div>
-
       <div className={`grid ${compact ? 'grid-cols-2 gap-2' : 'grid-cols-2 gap-3'}`}>
         <div>
           <label htmlFor="nr-mcc" className="block text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>MCC</label>
@@ -253,6 +257,30 @@ export default function NrCellTowerSearch({
             aria-label="NR Cell Identity"
           />
         </div>
+      </div>
+
+      {/* Include surrounding checkbox */}
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          id="nrIncludeSurrounding"
+          checked={includeSurrounding}
+          onChange={(e) => setIncludeSurrounding(e.target.checked)}
+          className="checkbox-themed"
+          disabled={isSearching}
+        />
+        <label
+          htmlFor="nrIncludeSurrounding"
+          className="text-sm cursor-pointer select-none"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          Include surrounding cells
+        </label>
+        {includeSurrounding && (
+          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            (returns all cells in cluster)
+          </span>
+        )}
       </div>
 
       {searchError && (
@@ -330,15 +358,52 @@ export default function NrCellTowerSearch({
                 </ul>
               </section>
               <section>
+                <h3 className="font-semibold mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>
+                  How to Find Cell Parameters
+                </h3>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Use network diagnostic apps or cellular network scanners like{' '}
+                  <a
+                    href="https://www.networksurvey.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleNetworkSurveyClick}
+                    className="underline hover:opacity-80"
+                    style={{ color: 'var(--color-link)' }}
+                  >
+                    Network Survey
+                  </a>{' '}
+                  to find your cell&apos;s MCC, MNC, TAC, and NCI values.
+                </p>
+              </section>
+              <section>
                 <h3 className="font-semibold mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>About the results</h3>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                  Apple returns the target cell plus typically ~100 surrounding NR cells in the same cluster, each with a real lat/lng and per-cell accuracy in the 1-2 km range. The cell whose NCI matches your query is marked as the primary result.
+                  By default this returns just the target cell. Enable &quot;Include surrounding cells&quot; to also get the ~100 surrounding NR cells Apple returns in the same cluster. Each cell has a real lat/lng with per-cell accuracy typically in the 1-2 km range; the cell whose NCI matches your query is marked as the primary result.
                 </p>
               </section>
             </div>
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Info Text */}
+      {!compact && (
+        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+          Enter 5G NR cell parameters. Use{' '}
+          <a
+            href="https://networksurvey.app/android"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleNetworkSurveyClick}
+            className="underline hover:opacity-80"
+            style={{ color: 'var(--color-link)' }}
+          >
+            Network Survey
+          </a>
+          {' '}to find these values.
+        </p>
+      )}
     </div>
   );
 }

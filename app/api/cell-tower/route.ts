@@ -160,10 +160,14 @@ async function queryAppleWLOCForNrCell(
   mnc: number,
   nci: string,
   tac: number,
-  endpoint: 'global' | 'china'
+  endpoint: 'global' | 'china',
+  returnAll: boolean = false
 ): Promise<NrCellTowerSearchResult[] | null> {
   try {
     const requestData: IAppleWLoc = {
+      // Apple ignores numCellResults for NR and always returns the full
+      // ~100-cell cluster, so single-cell mode is achieved by filtering the
+      // parsed response below (mirroring the LTE path), not by this value.
       numCellResults: -1,
       nrCellRequest: { mcc, mnc, nci, tac },
       deviceType: {
@@ -183,12 +187,26 @@ async function queryAppleWLOCForNrCell(
       return null;
     }
 
+    // parseNrCellResponses returns nci as a canonical decimal string, but the
+    // caller-supplied nci is only digit-filtered, so leading-zero or other
+    // formatting differences would break equality. Normalize once and use it
+    // for both the single-cell filter and the isPrimary flag.
+    const wantNci = /^\d+$/.test(nci) ? String(BigInt(nci)) : nci;
+
     // Filter out -180/-180 echo (Apple's "not found" sentinel) but keep all
     // real-location entries. parseLocation already returns null for -180/-180,
     // so cells with location === null are the echoes.
-    const realCells = nrCells.filter(c => c.location !== null);
+    let realCells = nrCells.filter(c => c.location !== null);
     if (realCells.length === 0) {
       return null;
+    }
+
+    // When the caller does not want the surrounding cluster, narrow to the
+    // primary cell (the row matching the searched NCI/TAC); fall back to the
+    // first cell if Apple's cluster has no exact match.
+    if (!returnAll) {
+      const primary = realCells.find(c => c.nci === wantNci && c.tac === tac);
+      realCells = primary ? [primary] : realCells.slice(0, 1);
     }
 
     const results: NrCellTowerSearchResult[] = realCells.map(c => ({
@@ -205,7 +223,7 @@ async function queryAppleWLOCForNrCell(
       },
       accuracy: c.horizontalAccuracy,
       source: endpoint,
-      isPrimary: c.nci === nci && c.tac === tac
+      isPrimary: c.nci === wantNci && c.tac === tac
     }));
 
     return results;
@@ -268,6 +286,7 @@ async function handleNrLookup(
   mnc: string,
   nci: string | null,
   tac: string | null,
+  returnAll: boolean,
   ip: string
 ): Promise<NextResponse> {
   if (!mcc || !mnc || !nci || !tac) {
@@ -291,10 +310,10 @@ async function handleNrLookup(
   const mncNum = parseInt(mnc, 10);
   const tacNum = parseInt(tac, 10);
 
-  let results = await queryAppleWLOCForNrCell(mccNum, mncNum, nci, tacNum, 'global');
+  let results = await queryAppleWLOCForNrCell(mccNum, mncNum, nci, tacNum, 'global', returnAll);
   if (!results) {
     console.log('NR cell not found in global database, trying China endpoint...');
-    results = await queryAppleWLOCForNrCell(mccNum, mncNum, nci, tacNum, 'china');
+    results = await queryAppleWLOCForNrCell(mccNum, mncNum, nci, tacNum, 'china', returnAll);
   }
 
   if (!results || results.length === 0) {
@@ -331,6 +350,7 @@ export async function GET(request: NextRequest) {
         sp.get('mnc') || '',
         sp.get('nci'),
         sp.get('tac'),
+        sp.get('returnAll') === 'true',
         ip
       );
     }
@@ -366,6 +386,7 @@ export async function POST(request: NextRequest) {
         mnc !== undefined && mnc !== null ? String(mnc) : '',
         nci !== undefined && nci !== null ? String(nci) : null,
         tac !== undefined && tac !== null ? String(tac) : null,
+        body?.returnAll === true,
         ip
       );
     }
