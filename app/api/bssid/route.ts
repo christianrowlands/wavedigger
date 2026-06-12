@@ -10,7 +10,7 @@ import {
   IAppleWLoc,
   IWifiDevice 
 } from '@/lib/protobuf/schema';
-import { recordError404 } from '@/lib/rate-limit';
+import { recordError404, guardRequest, getClientIp } from '@/lib/rate-limit';
 
 // Apple WLOC API implementation
 async function queryAppleWLOC(bssid: string, endpoint: 'global' | 'china', returnAll: boolean = false): Promise<BSSIDSearchResult | BSSIDSearchResult[] | null> {
@@ -145,11 +145,13 @@ async function queryAppleWLOC(bssid: string, endpoint: 'global' | 'china', retur
 
 
 export async function POST(request: NextRequest) {
+  const denied = guardRequest(request);
+  if (denied) return denied;
+
   try {
     // Log request details for debugging bot attacks
-    const ip = request.headers.get('x-forwarded-for') || 
-                request.headers.get('x-real-ip') || 
-                'unknown';
+    // Must match the key guardRequest uses for isIPBlocked, or blocks never fire
+    const ip = getClientIp(request);
     const userAgent = request.headers.get('user-agent') || 'none';
     const origin = request.headers.get('origin') || 'none';
     const referer = request.headers.get('referer') || 'none';

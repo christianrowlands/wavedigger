@@ -3,9 +3,13 @@ import type { BSSIDSearchResult, SearchError } from '@/types';
 import { toTile, pack } from '@/lib/morton-encoding';
 import { parseTileResponse } from '@/lib/protobuf/schema';
 import { decodeMac, tileCoordFromInt } from '@/lib/mac-utils';
+import { guardRequest } from '@/lib/rate-limit';
 
 // Tile search endpoint for location-based AP discovery
 export async function POST(request: NextRequest) {
+  const denied = guardRequest(request);
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const { latitude, longitude } = body;

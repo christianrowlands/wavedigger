@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { BSSIDSearchResult, SearchError } from '@/types';
+import { guardRequest } from '@/lib/rate-limit';
 
 // Import the enhanced queryAppleWLOC function
 // Since it's not exported, we'll need to duplicate some code for now
@@ -151,6 +152,9 @@ async function searchProximity(
 }
 
 export async function POST(request: NextRequest) {
+  const denied = guardRequest(request);
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const { latitude, longitude, seedBssid } = body;

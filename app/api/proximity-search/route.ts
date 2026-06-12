@@ -8,9 +8,13 @@ import {
   WLOC_HEADERS 
 } from '@/lib/protobuf/schema';
 import { normalizeBSSID } from '@/lib/bssid-utils';
+import { guardRequest } from '@/lib/rate-limit';
 
 // Proximity search using WLOC API refinement
 export async function POST(request: NextRequest) {
+  const denied = guardRequest(request);
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const { seedBSSID, targetLat, targetLng, maxDistance = 2000 } = body;

@@ -115,15 +115,18 @@ export default function CellTowerSearch({
     setIsSearching(true);
     
     try {
-      const params = new URLSearchParams({
-        mcc,
-        mnc,
-        cellId,
-        tacId,
-        returnAll: includeSurrounding ? 'true' : 'false'
+      const response = await fetch('/api/cell-tower', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          radio: 'lte',
+          mcc,
+          mnc,
+          cellId,
+          tacId,
+          returnAll: includeSurrounding
+        })
       });
-      
-      const response = await fetch(`/api/cell-tower?${params}`);
       const data = await response.json();
       
       if (!response.ok) {

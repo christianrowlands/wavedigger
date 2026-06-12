@@ -10,7 +10,7 @@ import {
   IAppleWLoc
 } from '@/lib/protobuf/schema';
 import { validateNrCellTowerParams } from '@/lib/cell-tower-utils';
-import { recordError404 } from '@/lib/rate-limit';
+import { recordError404, guardRequest, getClientIp } from '@/lib/rate-limit';
 
 // Validate LTE cell tower parameters (existing path, unchanged semantics)
 function validateLteCellTowerParams(mcc: string, mnc: string, cellId: string, tacId: string): {
@@ -328,19 +328,17 @@ async function handleNrLookup(
   return NextResponse.json({ results, radio: 'nr' });
 }
 
-function getIp(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for') ||
-         request.headers.get('x-real-ip') ||
-         'unknown';
-}
 
 function normalizeRadio(value: string | null | undefined): 'lte' | 'nr' {
   return value === 'nr' ? 'nr' : 'lte';
 }
 
 export async function GET(request: NextRequest) {
+  const denied = guardRequest(request);
+  if (denied) return denied;
+
   try {
-    const ip = getIp(request);
+    const ip = getClientIp(request);
     const sp = request.nextUrl.searchParams;
     const radio = normalizeRadio(sp.get('radio'));
 
@@ -374,8 +372,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = guardRequest(request);
+  if (denied) return denied;
+
   try {
-    const ip = getIp(request);
+    const ip = getClientIp(request);
     const body = await request.json().catch(() => ({}));
     const radio = normalizeRadio(body?.radio);
 

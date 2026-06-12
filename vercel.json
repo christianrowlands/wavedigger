@@ -9,6 +9,9 @@
     "app/api/bssid/route.ts": {
       "maxDuration": 10
     },
+    "app/api/cell-tower/route.ts": {
+      "maxDuration": 10
+    },
     "app/api/location-search/route.ts": {
       "maxDuration": 10
     },
