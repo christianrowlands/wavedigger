@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 import ThemeToggle from '@/components/theme-toggle';
 import AboutDialog from '@/components/about-dialog';
 import MobileSheet from '@/components/mobile-sheet';
+import DeveloperLinks from '@/components/developer-links';
 import SearchControls from '@/components/search-controls';
 import ShareButton from '@/components/share-button';
 import CopyButton from '@/components/copy-button';
@@ -835,7 +836,7 @@ function HomeContent() {
 
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden relative">
         {/* Desktop Sidebar */}
-        <div className="hidden lg:block lg:w-96 z-10 overflow-y-auto transition-all glass-subtle" style={{ 
+        <div className="hidden lg:flex lg:flex-col lg:w-96 z-10 overflow-y-auto transition-all glass-subtle" style={{
           background: 'var(--bg-sidebar)',
           borderRight: '1px solid var(--border-primary)',
           boxShadow: 'var(--shadow-lg)'
@@ -1366,6 +1367,11 @@ function HomeContent() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Cross-promotion footer, pinned to the bottom of the sidebar */}
+          <div className="mt-auto p-6 pt-4 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+            <DeveloperLinks placement="sidebar" variant="compact" />
           </div>
         </div>
 

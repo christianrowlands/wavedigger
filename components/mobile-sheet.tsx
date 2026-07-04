@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ShareButton from '@/components/share-button';
 import CopyButton from '@/components/copy-button';
+import DeveloperLinks from '@/components/developer-links';
 import { useShareUrl } from '@/hooks/use-share-url';
 import { formatBSSIDForDisplay } from '@/lib/bssid-utils';
 import { parseCellTowerInfo, isNrCellTowerLabel, parseNrCellTowerInfo } from '@/lib/cell-tower-utils';
@@ -666,6 +667,13 @@ export default function MobileSheet({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Cross-promotion footer, shown only when the sheet is expanded */}
+          {sheetState !== 'closed' && (
+            <div className="mt-6 pt-4 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+              <DeveloperLinks placement="mobile_sheet" variant="compact" />
             </div>
           )}
         </div>

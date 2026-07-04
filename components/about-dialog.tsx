@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import DeveloperLinks from '@/components/developer-links';
 
 export default function AboutDialog() {
   return (
@@ -135,6 +136,13 @@ export default function AboutDialog() {
               project. Their work in reverse engineering Apple&apos;s location services API made 
               this tool possible.
             </p>
+          </section>
+
+          <section className="pt-4 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+            <h3 className="font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              More from the developer
+            </h3>
+            <DeveloperLinks placement="about" variant="full" />
           </section>
         </div>
       </DialogContent>
