@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { HelpCircle, AlertCircle, Signal, Edit2, ChevronUp } from 'lucide-react';
 import type { CellTowerSearchResult, SearchError } from '@/types';
 import { validateCellTowerParams, COMMON_CARRIERS } from '@/lib/cell-tower-utils';
@@ -56,48 +56,62 @@ export default function CellTowerSearch({
   const [lastSearchParams, setLastSearchParams] = useState<{ mcc: string; mnc: string; tac: string; cellId: string; carrier?: string } | null>(null);
   const { logEvent } = useAnalytics();
   const { showToast } = useToast();
-  const hasAppliedUrlCollapse = useRef(false);
+  const [appliedInitialValues, setAppliedInitialValues] = useState({
+    mcc: initialMcc,
+    mnc: initialMnc,
+    tac: initialTac,
+    cellId: initialCellId
+  });
+  const [hasAppliedUrlCollapse, setHasAppliedUrlCollapse] = useState(false);
 
-  // Update state when initial values change (for auto-populate)
-  useEffect(() => {
+  // Update state when initial values change (for auto-populate). Adjusting
+  // state while rendering is React's pattern for reacting to changed props and
+  // avoids the extra render an effect would cause.
+  if (
+    initialMcc !== appliedInitialValues.mcc ||
+    initialMnc !== appliedInitialValues.mnc ||
+    initialTac !== appliedInitialValues.tac ||
+    initialCellId !== appliedInitialValues.cellId
+  ) {
+    setAppliedInitialValues({
+      mcc: initialMcc,
+      mnc: initialMnc,
+      tac: initialTac,
+      cellId: initialCellId
+    });
     if (initialMcc) setMcc(initialMcc);
     if (initialMnc) setMnc(initialMnc);
     if (initialTac) setTacId(initialTac);
     if (initialCellId) setCellId(initialCellId);
-  }, [initialMcc, initialMnc, initialTac, initialCellId]);
+  }
 
   // Reset collapsed state when tab becomes inactive
-  useEffect(() => {
-    if (!isActive && isCollapsed) {
-      setIsCollapsed(false);
-    }
-  }, [isActive, isCollapsed]);
+  if (!isActive && isCollapsed) {
+    setIsCollapsed(false);
+  }
 
-  // Handle starting collapsed when loaded from URL
-  useEffect(() => {
-    if (shouldStartCollapsed && compact && !hasAppliedUrlCollapse.current) {
-      // Only collapse if we have the initial values (meaning results were loaded)
-      if (initialMcc && initialMnc && initialTac && initialCellId) {
-        setIsCollapsed(true);
-        // Set last search params for the collapsed view
-        const carrier = COMMON_CARRIERS.find(c => c.mcc === parseInt(initialMcc, 10) && c.mnc === parseInt(initialMnc, 10));
-        setLastSearchParams({
-          mcc: initialMcc,
-          mnc: initialMnc,
-          tac: initialTac,
-          cellId: initialCellId,
-          carrier: carrier?.name
-        });
-        // Mark that we've applied the URL collapse
-        hasAppliedUrlCollapse.current = true;
-      }
-    }
-    
-    // Reset the flag when shouldStartCollapsed becomes false
-    if (!shouldStartCollapsed && hasAppliedUrlCollapse.current) {
-      hasAppliedUrlCollapse.current = false;
-    }
-  }, [shouldStartCollapsed, compact, initialMcc, initialMnc, initialTac, initialCellId]);
+  // Handle starting collapsed when loaded from URL. Only collapse once we have
+  // the initial values, which means results were loaded.
+  if (
+    shouldStartCollapsed &&
+    compact &&
+    !hasAppliedUrlCollapse &&
+    initialMcc && initialMnc && initialTac && initialCellId
+  ) {
+    setHasAppliedUrlCollapse(true);
+    setIsCollapsed(true);
+    // Set last search params for the collapsed view
+    const carrier = COMMON_CARRIERS.find(c => c.mcc === parseInt(initialMcc, 10) && c.mnc === parseInt(initialMnc, 10));
+    setLastSearchParams({
+      mcc: initialMcc,
+      mnc: initialMnc,
+      tac: initialTac,
+      cellId: initialCellId,
+      carrier: carrier?.name
+    });
+  } else if (!shouldStartCollapsed && hasAppliedUrlCollapse) {
+    setHasAppliedUrlCollapse(false);
+  }
 
 
   const handleSearch = async () => {

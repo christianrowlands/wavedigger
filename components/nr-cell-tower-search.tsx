@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { HelpCircle, AlertCircle, Signal, Edit2 } from 'lucide-react';
 import type { NrCellTowerSearchResult, SearchError } from '@/types';
 import {
@@ -56,12 +56,32 @@ export default function NrCellTowerSearch({
   const { logEvent } = useAnalytics();
   const { showToast } = useToast();
 
-  useEffect(() => {
+  const [appliedInitialValues, setAppliedInitialValues] = useState({
+    mcc: initialMcc,
+    mnc: initialMnc,
+    tac: initialTac,
+    nci: initialNci
+  });
+
+  // Adopt new initial values (auto-populate from a shared URL) while rendering
+  // rather than copying them into state from an effect.
+  if (
+    initialMcc !== appliedInitialValues.mcc ||
+    initialMnc !== appliedInitialValues.mnc ||
+    initialTac !== appliedInitialValues.tac ||
+    initialNci !== appliedInitialValues.nci
+  ) {
+    setAppliedInitialValues({
+      mcc: initialMcc,
+      mnc: initialMnc,
+      tac: initialTac,
+      nci: initialNci
+    });
     if (initialMcc) setMcc(initialMcc);
     if (initialMnc) setMnc(initialMnc);
     if (initialTac) setTac(initialTac);
     if (initialNci) setNci(initialNci);
-  }, [initialMcc, initialMnc, initialTac, initialNci]);
+  }
 
   const handleSearch = async () => {
     setSearchError(null);
