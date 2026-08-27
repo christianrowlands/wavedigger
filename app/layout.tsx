@@ -106,13 +106,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico' },
-      { url: '/icon-16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/icon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico?v=2' },
+      { url: '/icon-16.png?v=2', sizes: '16x16', type: 'image/png' },
+      { url: '/icon-32.png?v=2', sizes: '32x32', type: 'image/png' },
     ],
     apple: [
-      { url: '/apple-icon.png' },
-      { url: '/apple-icon-180.png', sizes: '180x180' },
+      { url: '/apple-icon.png?v=2' },
+      { url: '/apple-icon-180.png?v=2', sizes: '180x180' },
     ],
   },
 };
