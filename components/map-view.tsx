@@ -25,6 +25,18 @@ interface MapViewProps {
   clickedLocation?: { latitude: number; longitude: number } | null;
 }
 
+function getSavedMapStyle(): keyof typeof MAP_STYLES {
+  try {
+    const savedStyle = localStorage.getItem('mapStyle');
+    if (savedStyle && savedStyle in MAP_STYLES) {
+      return savedStyle as keyof typeof MAP_STYLES;
+    }
+  } catch {
+    // Storage can be unavailable (private browsing); use the default style.
+  }
+  return 'standard';
+}
+
 const INITIAL_VIEW_STATE: ViewState = {
   longitude: -98.5795,
   latitude: 39.8283,
@@ -82,7 +94,7 @@ export default function MapView({
   });
   const [hoveredMarker, setHoveredMarker] = useState<MapMarker | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [currentStyle, setCurrentStyle] = useState<keyof typeof MAP_STYLES>('standard');
+  const [currentStyle, setCurrentStyle] = useState<keyof typeof MAP_STYLES>(getSavedMapStyle);
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [iconColors, setIconColors] = useState({
@@ -127,23 +139,9 @@ export default function MapView({
     return () => observer.disconnect();
   }, []);
   
-  // Load saved map style preference
-  useEffect(() => {
-    const savedStyle = localStorage.getItem('mapStyle');
-    if (savedStyle && savedStyle in MAP_STYLES) {
-      setCurrentStyle(savedStyle as keyof typeof MAP_STYLES);
-    }
-  }, []);
-  
-  // Track if initial load has completed
-  const [hasInitialLoadCompleted, setHasInitialLoadCompleted] = useState(false);
-
-  // Mark initial load as completed after first render
-  useEffect(() => {
-    if (isMapReady && !hasInitialLoadCompleted) {
-      setHasInitialLoadCompleted(true);
-    }
-  }, [isMapReady, hasInitialLoadCompleted]);
+  // Tracks the style the map has already had its config applied for, so a style
+  // switch is told apart from the initial load without a render of its own.
+  const configuredStyleRef = useRef<keyof typeof MAP_STYLES | null>(null);
 
   // Shared helper to apply Standard style label configuration
   const applyStandardConfig = useCallback(() => {
@@ -158,8 +156,10 @@ export default function MapView({
   
   // Handle style changes after initial load (when switching between styles)
   useEffect(() => {
+    if (!isMapReady || !mapRef.current) return;
     // Skip on initial load - onLoad handler applies config there
-    if (!hasInitialLoadCompleted || !isMapReady || !mapRef.current) return;
+    if (configuredStyleRef.current === currentStyle) return;
+    configuredStyleRef.current = currentStyle;
 
     if (currentStyle === 'standard') {
       const map = mapRef.current.getMap();
@@ -167,17 +167,17 @@ export default function MapView({
         map.once('idle', applyStandardConfig);
       }
     }
-  }, [currentStyle, hasInitialLoadCompleted, isMapReady, applyStandardConfig]);
+  }, [currentStyle, isMapReady, applyStandardConfig]);
   
   // Handle dark mode changes for Standard style (separate from style switching)
   useEffect(() => {
-    if (!isMapReady || !mapRef.current || currentStyle !== 'standard' || !hasInitialLoadCompleted) return;
+    if (!isMapReady || !mapRef.current || currentStyle !== 'standard') return;
 
     const map = mapRef.current.getMap();
     if (map && map.isStyleLoaded()) {
       applyStandardConfig();
     }
-  }, [isDarkMode, currentStyle, isMapReady, hasInitialLoadCompleted, applyStandardConfig]);
+  }, [isDarkMode, currentStyle, isMapReady, applyStandardConfig]);
   
   // Close style menu when clicking outside
   useEffect(() => {
@@ -204,27 +204,29 @@ export default function MapView({
     });
   }, []);
   
-  // Fly to location when requested
+  // Fly to location when requested. This starts the animation during the render
+  // that receives the request, so the transition is committed without a
+  // cascading render.
+  const [startedFlyTo, setStartedFlyTo] = useState<MapViewProps['flyToLocation']>(null);
+  if (flyToLocation && isMapReady && flyToLocation !== startedFlyTo) {
+    setStartedFlyTo(flyToLocation);
+    setViewState(current => ({
+      ...current,
+      longitude: flyToLocation.longitude,
+      latitude: flyToLocation.latitude,
+      zoom: flyToLocation.zoom || 15,
+      transitionDuration: 2000,
+      transitionInterpolator: new FlyToInterpolator()
+    }));
+  }
+
+  // Let the parent clear its request once the animation has started
   useEffect(() => {
-    if (flyToLocation && isMapReady) {
-      
-      // Use FlyToInterpolator for smooth animation
-      setViewState({
-        ...viewState,
-        longitude: flyToLocation.longitude,
-        latitude: flyToLocation.latitude,
-        zoom: flyToLocation.zoom || 15,
-        transitionDuration: 2000,
-        transitionInterpolator: new FlyToInterpolator()
-      });
-      
-      // Clear flyToLocation after starting animation
-      setTimeout(() => {
-        onFlyToComplete?.();
-      }, 100);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flyToLocation, isMapReady]); // Intentionally not including viewState and onFlyToComplete to avoid loops
+    if (!flyToLocation || !isMapReady) return;
+
+    const completeTimer = setTimeout(() => onFlyToComplete?.(), 100);
+    return () => clearTimeout(completeTimer);
+  }, [flyToLocation, isMapReady, onFlyToComplete]);
 
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
 
@@ -492,6 +494,7 @@ export default function MapView({
             styleDiffing={false}
             onLoad={() => {
               setIsMapReady(true);
+              configuredStyleRef.current = currentStyle;
 
               // Apply Standard config after imports resolve (idle fires after all loading)
               if (currentStyle === 'standard') {

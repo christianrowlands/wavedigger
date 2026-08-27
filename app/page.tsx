@@ -38,15 +38,19 @@ const MapView = dynamic(() => import('@/components/map-view'), {
 });
 
 function HomeContent() {
+  const searchParams = useSearchParams();
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
   const [searchHistory, setSearchHistory] = useState<BSSIDSearchResult[]>([]);
   const [cellTowerSearchHistory, setCellTowerSearchHistory] = useState<BSSIDSearchResult[]>([]);
-  const [isMultiMode, setIsMultiMode] = useState(false);
+  const [isMultiMode, setIsMultiMode] = useState(() => searchParams.get('mode') === 'multi');
   const [flyToLocation, setFlyToLocation] = useState<{ longitude: number; latitude: number; zoom?: number } | null>(null);
   const [isLoadingFromUrl, setIsLoadingFromUrl] = useState(false);
   const [urlBssid, setUrlBssid] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'bssid' | 'location' | 'celltower'>('bssid');
+  const [activeTab, setActiveTab] = useState<'bssid' | 'location' | 'celltower'>(() => {
+    const tabParam = searchParams.get('tab');
+    return tabParam === 'bssid' || tabParam === 'location' || tabParam === 'celltower' ? tabParam : 'bssid';
+  });
   const [clickedLocation, setClickedLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isLocationSearching, setIsLocationSearching] = useState(false);
   const [selectedTowerParams, setSelectedTowerParams] = useState<{
@@ -65,7 +69,6 @@ function HomeContent() {
   const [shouldCloseSheet, setShouldCloseSheet] = useState(false);
   const [hasUrlLoadedTowerResults, setHasUrlLoadedTowerResults] = useState(false);
   
-  const searchParams = useSearchParams();
   const router = useRouter();
   const hasProcessedUrl = useRef(false);
   const { generateShareUrl } = useShareUrl();
@@ -625,10 +628,8 @@ function HomeContent() {
     if (hasProcessedUrl.current) return;
     
     const bssidParam = searchParams.get('bssid');
-    const modeParam = searchParams.get('mode');
     const latParam = searchParams.get('lat');
     const lngParam = searchParams.get('lng');
-    const tabParam = searchParams.get('tab');
     const mccParam = searchParams.get('mcc');
     const mncParam = searchParams.get('mnc');
     const tacParam = searchParams.get('tac');
@@ -637,14 +638,8 @@ function HomeContent() {
     const radioParam = searchParams.get('radio');
     const returnAllParam = searchParams.get('returnAll');
 
-    // Set tab if provided
-    if (tabParam && (tabParam === 'bssid' || tabParam === 'location' || tabParam === 'celltower')) {
-      setActiveTab(tabParam);
-    }
-
-    if (modeParam === 'multi') {
-      setIsMultiMode(true);
-    }
+    // The tab and multi-BSSID mode are seeded from the URL when state is
+    // created, so only the searches that need a request are handled here.
 
     // NR cell search from URL (radio=nr + nci) takes precedence over LTE.
     if (radioParam === 'nr' && mccParam && mncParam && tacParam && nciParam && !hasProcessedUrl.current) {

@@ -53,16 +53,18 @@ export default function MobileSheet({
   const { generateShareUrl } = useShareUrl();
   
   // Handle force close from parent
+  if (forceClose && sheetState !== 'closed') {
+    setSheetState('closed');
+    setSheetHeight(SHEET_CLOSED_HEIGHT);
+  }
+
+  // Notify parent that the close is complete once the animation has run
   useEffect(() => {
-    if (forceClose && sheetState !== 'closed') {
-      setSheetState('closed');
-      setSheetHeight(SHEET_CLOSED_HEIGHT);
-      // Notify parent that close is complete after animation
-      if (onForceCloseComplete) {
-        setTimeout(onForceCloseComplete, 300); // Match transition duration
-      }
-    }
-  }, [forceClose, sheetState, onForceCloseComplete]);
+    if (!forceClose || !onForceCloseComplete) return;
+
+    const closeTimer = setTimeout(onForceCloseComplete, 300); // Match transition duration
+    return () => clearTimeout(closeTimer);
+  }, [forceClose, onForceCloseComplete]);
   
   // Calculate max height based on window size
   const getMaxHeight = () => {
