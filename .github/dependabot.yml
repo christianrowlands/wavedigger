@@ -19,11 +19,10 @@ updates:
       minor-and-patch:
         update-types: ["minor", "patch"]
     ignore:
-      # eslint-config-next still pulls eslint-plugin-import / -react / -jsx-a11y,
-      # whose latest releases cap their eslint peer at ^9. Remove this once
-      # eslint-config-next supports eslint 10.
-      - dependency-name: "eslint"
-        versions: ["10.x"]
+      # Node typings track the deploy runtime (Node 24, see engines and CI).
+      # Raise this together with the runtime.
+      - dependency-name: "@types/node"
+        versions: [">=25"]
       # typescript-eslint 8.x (a dependency of eslint-config-next) declares
       # typescript ">=4.8.4 <6.1.0". Remove this once typescript-eslint
       # supports TypeScript 7.
