@@ -20,7 +20,7 @@
     "@radix-ui/react-label": "^2.1.16",
     "@radix-ui/react-slot": "^1.4.0",
     "clsx": "^2.1.1",
-    "firebase": "^12.19.0",
+    "firebase": "^13.0.0",
     "lucide-react": "^1.52.0",
     "mapbox-gl": "^3.32.0",
     "next": "^16.4.0",
