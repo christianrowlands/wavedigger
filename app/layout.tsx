@@ -105,14 +105,13 @@ export const metadata: Metadata = {
     title: 'WaveDigger',
   },
   icons: {
+    // app/favicon.ico is linked automatically with a content hash.
     icon: [
-      { url: '/favicon.ico?v=2' },
-      { url: '/icon-16.png?v=2', sizes: '16x16', type: 'image/png' },
-      { url: '/icon-32.png?v=2', sizes: '32x32', type: 'image/png' },
+      { url: '/icon-16.png?v=3', sizes: '16x16', type: 'image/png' },
+      { url: '/icon-32.png?v=3', sizes: '32x32', type: 'image/png' },
     ],
     apple: [
-      { url: '/apple-icon.png?v=2' },
-      { url: '/apple-icon-180.png?v=2', sizes: '180x180' },
+      { url: '/apple-icon.png?v=3', sizes: '180x180' },
     ],
   },
 };
