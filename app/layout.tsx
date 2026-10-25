@@ -62,6 +62,10 @@ export const metadata: Metadata = {
     telephone: false,
   },
   metadataBase: new URL('https://wavedigger.networksurvey.app'),
+  // Bing Webmaster Tools ownership (same account as caskfive.com and networksurvey.app).
+  verification: {
+    other: { 'msvalidate.01': '94CC632D8FF7B603812EBDB2D9EC88A8' },
+  },
   alternates: {
     canonical: '/',
   },
