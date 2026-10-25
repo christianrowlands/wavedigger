@@ -53,9 +53,9 @@ export const metadata: Metadata = {
     '5G cell identity',
     'gNodeB locator'
   ],
-  authors: [{ name: 'WaveDigger Team' }],
-  creator: 'WaveDigger',
-  publisher: 'WaveDigger',
+  authors: [{ name: 'Caskfive', url: 'https://caskfive.com' }],
+  creator: 'Caskfive',
+  publisher: 'Caskfive',
   formatDetection: {
     email: false,
     address: false,
@@ -148,6 +148,9 @@ export default function RootLayout({
           "price": "0",
           "priceCurrency": "USD"
         },
+        "author": { "@id": "https://caskfive.com/#organization" },
+        "publisher": { "@id": "https://caskfive.com/#organization" },
+        "sameAs": ["https://github.com/christianrowlands/wavedigger"],
         "featureList": [
           "BSSID to location lookup",
           "Multiple BSSID search",
@@ -161,14 +164,11 @@ export default function RootLayout({
         ]
       },
       {
+        // Caskfive makes WaveDigger; caskfive.com carries the full record under this @id.
         "@type": "Organization",
-        "@id": "https://wavedigger.networksurvey.app/#organization",
-        "name": "WaveDigger",
-        "url": "https://wavedigger.networksurvey.app",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://wavedigger.networksurvey.app/logo.png"
-        }
+        "@id": "https://caskfive.com/#organization",
+        "name": "Caskfive",
+        "url": "https://caskfive.com"
       },
       {
         "@type": "WebSite",
@@ -177,7 +177,7 @@ export default function RootLayout({
         "name": "WaveDigger",
         "description": "WiFi and cell tower location finder and network mapping tool",
         "publisher": {
-          "@id": "https://wavedigger.networksurvey.app/#organization"
+          "@id": "https://caskfive.com/#organization"
         },
         "potentialAction": {
           "@type": "SearchAction",
